@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bullet Journal</title>
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* Layout: verktygsrad överst, en sida i 3:4 som fyller skärmen, flikrad till höger som i ett riktigt anteckningsblock.
+   Medvetet ett enda ljust "papper"-tema: det ska se likadant ut på e-ink och dator. */
+:root{
+  --paper:#ffffff; --ink:#16181d; --muted:#6b6f78; --rule:#c9ccd3; --dot:#b4b8c1;
+  --shade:#f1f2f5; --accent:#1f4fd1; --accent-ink:#ffffff; --desk:#e7e8ec; --tint:#f1f2f5;
+  --display:"Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{background:var(--desk);color:var(--ink);font-family:var(--body);overflow:hidden;
+  -webkit-user-select:none;user-select:none}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr;
+  padding-left:max(0px, env(safe-area-inset-left,0px));padding-right:max(0px, env(safe-area-inset-right,0px))}
+.bar{box-shadow:inset 0 -8px 0 var(--accent);padding-bottom:16px!important;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--paper);
+  border-bottom:2px solid var(--ink);padding:8px max(16px, env(safe-area-inset-right,0px)) 8px max(16px, env(safe-area-inset-left,0px))}
+.ttl{display:flex;flex-direction:column;min-width:0;flex:1 1 220px}
+.ttl h1{font-family:var(--display);font-weight:800;font-size:22px;line-height:1.1;margin:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumbs{display:flex;gap:12px;font-size:14px;color:var(--muted);flex-wrap:wrap}
+.crumbs button{all:unset;cursor:pointer;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.crumbs input{font:inherit;font-size:15px;border:0;border-bottom:1.5px solid var(--rule);padding:2px 0;
+  min-width:0;width:220px;color:var(--ink);background:transparent}
+.grp{display:flex;gap:4px;align-items:center}
+.btn{font:700 15px var(--body);background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);
+  border-radius:8px;min-width:40px;height:40px;padding:0 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn:focus-visible,.tab:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn svg{width:20px;height:20px}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--paper);box-shadow:0 0 0 1.5px var(--rule);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2.5px var(--ink)}
+.status{font-size:13px;color:var(--muted);min-width:110px;text-align:right}
+.status.warn{color:#b3261e;font-weight:700}
+.main{display:flex;min-height:0}
+.stage{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:10px}
+.page{position:relative;background:var(--paper);box-shadow:0 1px 0 var(--rule),0 0 0 1px var(--rule)}
+.page > *{position:absolute;inset:0;width:100%;height:100%}
+#ink{touch-action:none;cursor:crosshair}
+.page.tool-text #ink{cursor:text}
+.page.tool-erase #ink{cursor:cell}
+svg text{font-family:var(--body);fill:var(--ink)}
+.tpl .dot{fill:var(--dot)} .tpl .rule{stroke:var(--rule);stroke-width:1.5}
+.tpl .hard{stroke:var(--ink);stroke-width:2} .tpl .wk{fill:var(--tint)}
+.tpl .mut{fill:var(--muted)} .tpl .off{fill:var(--rule)} .tpl .inkf{fill:var(--ink)}
+.tpl .box{fill:none;stroke:var(--muted);stroke-width:1.5} .tpl .today{fill:none;stroke:var(--accent);stroke-width:4}
+.tpl .hit{fill:transparent} .tpl .link{text-decoration:underline}
+.tpl .sym{stroke:var(--ink);stroke-width:3;fill:none;stroke-linecap:round}
+.txt text{font-size:30px;white-space:pre}
+.rail{width:62px;flex:none;display:flex;flex-direction:column;background:var(--paper);border-left:2px solid var(--ink);
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+.yr{display:flex;align-items:center;justify-content:space-between;font:700 13px var(--body);padding:6px 2px;border-bottom:1px solid var(--rule)}
+.yr button{all:unset;cursor:pointer;padding:2px 6px;font-size:16px}
+.tabs{flex:1;display:flex;flex-direction:column;min-height:0}
+.tab{all:unset;flex:1;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;
+  border-bottom:1px solid var(--shade);min-height:22px;text-align:center}
+.tab.mo{box-shadow:inset 6px 0 0 var(--mc)}
+.tab.on{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.tab.mo.on{background:var(--mc);color:var(--mi);box-shadow:none}
+.tab:disabled{color:var(--rule);cursor:default}
+#editor{position:absolute;inset:auto;width:auto;height:auto;font-family:var(--body);border:1.5px dashed var(--accent);
+  background:var(--paper);color:var(--ink);padding:2px 4px;outline:none;min-width:200px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:8px;font-size:14px;max-width:90vw}
+@media (max-width:700px){
+  .tab.mo{box-shadow:inset 0 -6px 0 var(--mc)}
+  .main{flex-direction:column}
+  .rail{width:auto;flex-direction:row;border-left:0;border-top:2px solid var(--ink);overflow-x:auto}
+  .yr{border-bottom:0;border-right:1px solid var(--rule)}
+  .tabs{flex-direction:row}
+  .tab{min-width:44px;padding:10px 4px;border-bottom:0;border-right:1px solid var(--shade)}
+  .ttl h1{font-size:18px}
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-size:14px}
+[hidden]{display:none!important}
+.dlg{position:fixed;inset:0;background:rgba(22,24,29,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.dlg form{background:var(--paper);border:2px solid var(--ink);border-radius:12px;padding:20px;width:min(460px,100%);display:grid;gap:12px}
+.dlg h2{font-family:var(--display);margin:0;font-size:22px}
+.dlg p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
+.dlg label{display:grid;gap:4px;font-weight:700;font-size:14px}
+.dlg input{font:16px var(--body);padding:10px;border:1.5px solid var(--ink);border-radius:8px;width:100%}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.dlg .msg{min-height:1.2em;font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="bar">
+    <div class="ttl"><h1 id="title">Bullet Journal</h1><div class="crumbs" id="crumbs"></div></div>
+    <div class="grp">
+      <button class="btn" id="today">Idag</button>
+      <button class="btn" id="prev" aria-label="Föregående sida">‹</button>
+      <button class="btn" id="next" aria-label="Nästa sida">›</button>
+    </div>
+    <div class="grp" role="group" aria-label="Verktyg">
+      <button class="btn" id="tPen" aria-pressed="true" title="Penna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></button>
+      <button class="btn" id="tErase" aria-pressed="false" title="Sudd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 20h13M4 15l9-9 6 6-7 7H8z"/></svg></button>
+      <button class="btn" id="tText" aria-pressed="false" title="Skriv med tangentbordet">Aa</button>
+      <button class="btn" id="undo" title="Ångra (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10"/></svg></button>
+    </div>
+    <div class="grp" role="group" aria-label="Färg" id="colors"></div>
+    <div class="status" id="status" aria-live="polite">Startar…</div>
+    <button class="btn" id="settings" title="Synkinställningar" aria-label="Synkinställningar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
+  </header>
+  <div class="main">
+    <div class="stage" id="stage">
+      <div class="page" id="page">
+        <svg class="tpl" id="tpl" viewBox="0 0 1200 1600"></svg>
+        <svg class="txt" id="txt" viewBox="0 0 1200 1600"></svg>
+        <canvas id="ink"></canvas>
+      </div>
+    </div>
+    <nav class="rail" aria-label="Flikar">
+      <div class="yr"><button id="yPrev" aria-label="Föregående år">‹</button><span id="yLab"></span><button id="yNext" aria-label="Nästa år">›</button></div>
+      <div class="tabs" id="tabs"></div>
+    </nav>
+  </div>
+</div>
+
+<div class="dlg" id="dlg" hidden>
+  <form id="dlgForm">
+    <h2>Synk</h2>
+    <p>Fyll i adressen till din Cloudflare Worker och lösenordet du valde. Det sparas bara på den här enheten.</p>
+    <label for="sUrl">Synkadress<input id="sUrl" type="url" placeholder="https://bujo-sync.dittnamn.workers.dev" autocomplete="off"></label>
+    <label for="sKey">Lösenord<input id="sKey" type="password" autocomplete="current-password"></label>
+    <div class="msg" id="sMsg" aria-live="polite"></div>
+    <div class="row"><button class="btn" type="button" id="sCancel">Stäng</button><button class="btn" type="submit" style="background:var(--ink);color:var(--paper)">Spara och testa</button></div>
+  </form>
+</div>
+<script>
+(() => {
+const W = 1200, H = 1600;
+const MON = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"];
+const WD = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"];
+const COLORS = ["#16181d","#1f4fd1","#c62828","#1b7a3d","#e07b00","#7b3fb5"];
+// Månadsfärger: [färg, textfärg ovanpå, ljus ton]
+const MCOL = { 1:["#5fb3ea","#16181d","#e6f3fc"], 2:["#14a3a0","#ffffff","#dcf3f2"], 3:["#9bd317","#16181d","#eff8d6"],
+  4:["#f5c400","#16181d","#fdf4cc"], 5:["#f06aa8","#16181d","#fde6f0"], 6:["#2e8b3e","#ffffff","#def0e1"],
+  7:["#1d3a8a","#ffffff","#dde3f3"], 8:["#b39ddb","#16181d","#efe9f8"], 9:["#4a1a6b","#ffffff","#e8dfef"],
+  10:["#f07c1a","#16181d","#fdebdc"], 11:["#7a4a25","#ffffff","#efe5dc"], 12:["#d32f2f","#ffffff","#fadddd"] };
+function setAccent(m){ const [c,i,t]=MCOL[m]; const st=document.documentElement.style;
+  st.setProperty("--accent",c); st.setProperty("--accent-ink",i); st.setProperty("--tint",t); }
+const CNAMES = ["Svart","Blå","Röd","Grön","Orange","Lila"];
+const START = d8(2026,10,1), END = d8(2030,12,31);
+const NCOLL = 30;
+
+/* ---------- datum ---------- */
+function d8(y,m,d){ return new Date(y, m-1, d, 12); }
+function iso(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
+function parse(s){ const [y,m,d]=s.split("-").map(Number); return d8(y,m,d||1); }
+function addD(x,n){ const r=new Date(x); r.setDate(r.getDate()+n); return r; }
+function wday(x){ return (x.getDay()+6)%7; }
+function monday(x){ return addD(x,-wday(x)); }
+function wk(x){ const t=addD(x,3-wday(x)); const fy=t.getFullYear(); const j=d8(fy,1,4); return 1+Math.floor(Math.round((t-monday(j))/864e5)/7); }
+function dim(y,m){ return new Date(y,m,0).getDate(); }
+function inR(x){ return x>=START && x<=END; }
+function mInR(y,m){ return inR(d8(y,m,dim(y,m))) && d8(y,m,1)<=END; }
+const cap = s => s[0].toUpperCase()+s.slice(1);
+function todayD(){ const n=new Date(); return d8(n.getFullYear(),n.getMonth()+1,n.getDate()); }
+function clampD(x){ return x<START?START:x>END?END:x; }
+
+/* ---------- sidnycklar ---------- */
+const K = {
+  d:x=>"d-"+iso(x), w:x=>"w-"+iso(monday(x)), m:(y,m)=>"m-"+y+"-"+String(m).padStart(2,"0"),
+  t:(y,m)=>"t-"+y+"-"+String(m).padStart(2,"0"), y:y=>"year-"+y, f:(y,q)=>"f-"+y+"-"+q, c:n=>"c-"+n
+};
+function info(key){
+  const [kind, ...r] = key.split("-"); const rest=r.join("-");
+  if(kind==="d"){ const x=parse(rest); return {kind,x,year:x.getFullYear(),month:x.getMonth()+1}; }
+  if(kind==="w"){ const x=parse(rest); const ref=inR(x)?x:clampD(x); return {kind,x,year:ref.getFullYear(),month:ref.getMonth()+1}; }
+  if(kind==="m"||kind==="t"){ const [y,m]=rest.split("-").map(Number); return {kind,year:y,month:m}; }
+  if(kind==="year") return {kind,year:+rest};
+  if(kind==="f"){ const [y,q]=rest.split("-").map(Number); return {kind,year:y,q}; }
+  if(kind==="c") return {kind,n:+rest};
+  return {kind};
+}
+function valid(key){
+  const i=info(key);
+  if(["idx","key","coll"].includes(i.kind)) return true;
+  if(i.kind==="d") return !isNaN(i.x) && inR(i.x);
+  if(i.kind==="w") return !isNaN(i.x) && wday(i.x)===0 && addD(i.x,6)>=START && i.x<=END;
+  if(i.kind==="m"||i.kind==="t") return i.month>=1&&i.month<=12 && mInR(i.year,i.month);
+  if(i.kind==="year") return i.year>=START.getFullYear() && i.year<=END.getFullYear();
+  if(i.kind==="f") return i.q>=0&&i.q<=3 && i.year>=START.getFullYear() && i.year<=END.getFullYear() && d8(i.year,i.q*3+3,dim(i.year,i.q*3+3))>=START;
+  if(i.kind==="c") return i.n>=1 && i.n<=NCOLL;
+  return false;
+}
+function neighbours(key){
+  const i=info(key); let p=null,n=null;
+  if(i.kind==="d"){ p=K.d(addD(i.x,-1)); n=K.d(addD(i.x,1)); }
+  else if(i.kind==="w"){ p="w-"+iso(addD(i.x,-7)); n="w-"+iso(addD(i.x,7)); }
+  else if(i.kind==="m"||i.kind==="t"){ const a=d8(i.year,i.month-1,1), b=d8(i.year,i.month+1,1);
+    const f=i.kind==="m"?K.m:K.t; p=f(a.getFullYear(),a.getMonth()+1); n=f(b.getFullYear(),b.getMonth()+1); }
+  else if(i.kind==="year"){ p=K.y(i.year-1); n=K.y(i.year+1); }
+  else if(i.kind==="f"){ p=i.q?K.f(i.year,i.q-1):K.f(i.year-1,3); n=i.q<3?K.f(i.year,i.q+1):K.f(i.year+1,0); }
+  else if(i.kind==="c"){ p=K.c(i.n-1); n=K.c(i.n+1); }
+  return [p&&valid(p)?p:null, n&&valid(n)?n:null];
+}
+
+/* ---------- lagring ---------- */
+const LS = {
+  get(k){ try{ return JSON.parse(localStorage.getItem("bujo:"+k)); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem("bujo:"+k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem("bujo:"+k); }catch(e){} }
+};
+function enc(pts){ let o=[],lx=0,ly=0; for(let i=0;i<pts.length;i+=2){ o.push(pts[i]-lx, pts[i+1]-ly); lx=pts[i]; ly=pts[i+1]; } return o.join(","); }
+function dec(s){ const a=s?s.split(",").map(Number):[]; let lx=0,ly=0; for(let i=0;i<a.length;i+=2){ lx+=a[i]; ly+=a[i+1]; a[i]=lx; a[i+1]=ly; } return a; }
+function toDoc(pg){ return { s: pg.strokes.map(s=>({i:s.id,c:s.c,w:s.w,p:enc(s.pts)})), x: pg.texts.map(t=>({...t})), at: Date.now() }; }
+function fromDoc(d){ return { strokes:(d&&d.s||[]).map(s=>({id:s.i,c:s.c|0,w:s.w||3,pts:dec(s.p)})), texts:(d&&d.x||[]).map(t=>({...t})) }; }
+const rid = () => Math.random().toString(36).slice(2,10);
+
+let db=null, cur=null, unsub=null, metaUnsub=null;
+const pages = {};            // key -> {strokes, texts}
+const dirty = new Set();
+const removed = {}; const restored = {};          // key -> Set(ids) borttagna i den här sessionen
+const undoStack = {};        // key -> actions
+const chains = {};           // key -> promise (en skrivning åt gången)
+let flushTimer=null, collTitles = LS.get("meta:coll")||{}, metaTimer=null;
+let tool=(matchMedia("(hover: hover) and (pointer: fine)").matches?"text":"pen"), color=0, railYear=todayD().getFullYear();
+
+const $ = id => document.getElementById(id);
+const statusEl=$("status");
+function status(t,warn){ statusEl.textContent=t; statusEl.classList.toggle("warn",!!warn); }
+
+function pg(key){ if(!pages[key]){ pages[key] = LS.get("p:"+key) ? fromDoc(LS.get("p:"+key)) : {strokes:[],texts:[]}; if(LS.get("p:"+key)) dirty.add(key); } return pages[key]; }
+
+function markDirty(key){
+  dirty.add(key); LS.set("p:"+key, toDoc(pages[key]));
+  status(db?"Sparar…":"Sparat på enheten");
+  clearTimeout(flushTimer); flushTimer=setTimeout(flushAll, 900);
+}
+function flushAll(){ for(const k of [...dirty]) flush(k); }
+function flush(key){
+  if(!db || !dirty.has(key)) return;
+  chains[key] = (chains[key]||Promise.resolve()).then(async ()=>{
+    if(!dirty.has(key)) return;
+    dirty.delete(key);
+    const body = toDoc(pages[key]);
+    body.rm=[...(removed[key]||[])]; body.rs=[...(restored[key]||[])];
+    try{
+      const j = await db.doc("pages/"+key).set(body);
+      if(j && j.body){ const merged=fromDoc(j.body);
+        if(!dirty.has(key)) pages[key]=merged; else mergeRemote(key, merged);
+        if(key===cur && !drawing && !erasing){ drawInk(); if(!editor) drawTexts(); } }
+      if(!dirty.has(key)) LS.del("p:"+key);
+      if(!dirty.size) status("Synkad");
+    }catch(e){
+      dirty.add(key);
+      if(e && e.code==="quota_exceeded"){ status("Lagringen är full", true); return; }
+      status("Inte synkad, försöker igen", true);
+      clearTimeout(flushTimer); flushTimer=setTimeout(flushAll, 6000);
+    }
+  });
+}
+function mergeRemote(key, remote){
+  const local = pages[key];
+  if(!local || !dirty.has(key)){ pages[key]=remote; return; }
+  const gone = removed[key]||new Set();
+  const have = new Set(local.strokes.map(s=>s.id));
+  for(const s of remote.strokes) if(!have.has(s.id) && !gone.has(s.id)) local.strokes.push(s);
+  const th = new Set(local.texts.map(t=>t.id));
+  for(const t of remote.texts) if(!th.has(t.id) && !gone.has(t.id)) local.texts.push(t);
+}
+function subscribe(key){
+  if(unsub){ unsub(); unsub=null; }
+  if(!db) return;
+  unsub = db.doc("pages/"+key).onSnapshot(snap=>{
+    if(snap.metadata.hasPendingWrites) return;
+    mergeRemote(key, snap.exists ? fromDoc(snap.data()) : {strokes:[],texts:[]});
+    if(key===cur){ drawInk(); drawTexts(); }
+    if(!dirty.size) status("Synkad");
+  }, err=>{ status("Synken pausad, ladda om sidan", true); });
+}
+function saveTitles(){
+  LS.set("meta:coll", collTitles);
+  if(!db) return;
+  clearTimeout(metaTimer);
+  metaTimer=setTimeout(async()=>{ try{ await db.doc("meta/coll").set({t:collTitles}); }catch(e){ status("Titeln sparades bara här", true); } }, 800);
+}
+
+/* ---------- mallar (SVG) ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const T = (x,y,s,size=28,cls="",anchor="start",w=400,go="") =>
+  `<text x="${x}" y="${y}" font-size="${size}" font-weight="${w}" text-anchor="${anchor}" class="${cls}"${go?` data-go="${go}"`:""}>${esc(s)}</text>`;
+const HIT = (x,y,w,h,go) => `<rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" data-go="${go}"/>`;
+const GRID = (top=40) => `<defs><pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse" x="0" y="${top%40}"><circle class="dot" cx="20" cy="20" r="2.4"/></pattern></defs><rect x="40" y="${top}" width="1120" height="${1560-top}" fill="url(#g)"/>`;
+const LINES = (y0,y1,step=56,x0=60,x1=1140) => { let s=""; for(let y=y0;y<=y1;y+=step) s+=`<line class="rule" x1="${x0}" y1="${y}" x2="${x1}" y2="${y}"/>`; return s; };
+
+function tplDay(){ return GRID(); }
+function tplMonth(i){
+  const nd=dim(i.year,i.month), top=50, rh=(1550-top)/nd, td=iso(todayD()); let s="";
+  for(let d=1; d<=nd; d++){
+    const x=d8(i.year,i.month,d), yb=top+(d-1)*rh, ty=yb+rh/2+10;
+    if(wday(x)>=5) s+=`<rect class="wk" x="40" y="${yb}" width="1120" height="${rh}"/>`;
+    s+=T(110,ty,d,30,"","end",700)+T(126,ty,WD[wday(x)].slice(0,2),22,"mut");
+    if(iso(x)===td) s+=`<rect class="today" x="44" y="${yb+3}" width="140" height="${rh-6}" rx="6"/>`;
+    s+=HIT(40,yb,150,rh,K.d(x));
+    if(wday(x)===0||d===1){ s+=T(1150,ty,"v."+wk(x),22,"mut link","end"); s+=HIT(1070,yb,90,rh,K.w(x)); }
+    s+=`<line class="rule" x1="40" y1="${yb+rh}" x2="1160" y2="${yb+rh}"/>`;
+  }
+  return s;
+}
+function tplWeek(i){
+  const bw=560, bh=380, td=iso(todayD()); let s="";
+  for(let k=0;k<8;k++){
+    const c=k%2, r=Math.floor(k/2), x0=40+c*bw, y0=40+r*bh;
+    s+=`<rect class="box" x="${x0+4}" y="${y0+4}" width="${bw-8}" height="${bh-8}" rx="6"/>`;
+    if(k<7){
+      const x=addD(i.x,k), lab=cap(WD[k])+" "+x.getDate()+"/"+(x.getMonth()+1);
+      if(inR(x)){ s+=T(x0+22,y0+46,lab,28,"link","start",700)+HIT(x0+4,y0+4,bw-8,62,K.d(x)); }
+      else s+=T(x0+22,y0+46,lab,28,"off","start",700);
+      if(iso(x)===td) s+=`<rect class="today" x="${x0+4}" y="${y0+4}" width="${bw-8}" height="${bh-8}" rx="6"/>`;
+    } else s+=T(x0+22,y0+46,"Veckans fokus",28,"","start",700);
+  }
+  return s;
+}
+function miniCal(y,m,x0,y0,cw){
+  const sx=(cw-20)/7, td=iso(todayD()); let s="";
+  const ok=mInR(y,m);
+  s+=`<rect x="${x0}" y="${y0+10}" width="${cw-40}" height="6" rx="3" style="fill:${MCOL[m][0]}"/>`;
+  s+= ok ? T(x0,y0,cap(MON[m-1]),30,"link","start",700)+HIT(x0-6,y0-30,cw-10,42,K.m(y,m)) : T(x0,y0,cap(MON[m-1]),30,"off","start",700);
+  "mtotfls".split("").forEach((c,j)=> s+=T(x0+j*sx+sx/2,y0+36,c,20,"mut","middle"));
+  let r=0;
+  for(let d=1; d<=dim(y,m); d++){
+    const x=d8(y,m,d), j=wday(x); if(d>1&&j===0) r++;
+    const cx=x0+j*sx+sx/2, cy=y0+76+r*44;
+    if(iso(x)===td) s+=`<circle class="today" cx="${cx}" cy="${cy-8}" r="20"/>`;
+    s+=T(cx,cy,d,24,inR(x)?"":"off","middle",j>=5?700:400);
+    if(inR(x)) s+=HIT(cx-sx/2,cy-30,sx,44,K.d(x));
+  }
+  return s;
+}
+function tplYear(i){ let s=""; const cw=373;
+  for(let m=1;m<=12;m++){ const c=(m-1)%3, r=Math.floor((m-1)/3); s+=miniCal(i.year,m,50+c*cw,90+r*380,cw); }
+  return s;
+}
+function tplFuture(i){ let s="";
+  for(let k=0;k<3;k++){ const m=i.q*3+k+1, y0=40+k*506;
+    s+= mInR(i.year,m) ? T(60,y0+50,cap(MON[m-1])+" "+i.year,32,"link","start",700)+HIT(50,y0+14,360,50,K.m(i.year,m)) : T(60,y0+50,cap(MON[m-1])+" "+i.year,32,"off","start",700);
+    s+=LINES(y0+110,y0+480);
+    if(k<2) s+=`<line class="hard" x1="40" y1="${y0+506}" x2="1160" y2="${y0+506}"/>`;
+  }
+  return s;
+}
+function tplIndex(){
+  let s="", y=90;
+  [["Idag",K.d(clampD(todayD()))],["Nyckel (symboler)","key"],["Årsöversikt "+railYear,K.y(railYear)],["Framtidslogg",firstFuture(railYear)],["Samlingar","coll"]]
+    .forEach(([l,g])=>{ s+=T(60,y,l,34,"link")+HIT(50,y-36,600,50,g); y+=62; });
+  y+=30; s+=T(60,y,"MÅNADER "+railYear,22,"mut","start",700); y+=56;
+  for(let m=1;m<=12;m++){ const c=(m-1)>=6?1:0, r=(m-1)%6, xx=60+c*540, yy=y+r*58;
+    s+= mInR(railYear,m) ? T(xx,yy,cap(MON[m-1]),32,"link")+HIT(xx-10,yy-34,400,50,K.m(railYear,m)) : T(xx,yy,cap(MON[m-1]),32,"off"); }
+  y+=6*58+40; s+=T(60,y,"EGNA SIDOR",22,"mut","start",700);
+  return s+LINES(y+50,1540);
+}
+function firstFuture(y){ for(let q=0;q<4;q++) if(valid(K.f(y,q))) return K.f(y,q); return K.f(START.getFullYear(),3); }
+function tplKey(){
+  const items=[["task","Uppgift"],["done","Klar"],["mig","Flyttad framåt"],["sch","Schemalagd i framtidsloggen"],["gone","Struken, inte längre aktuell"],["event","Händelse"],["note","Anteckning"],["prio","Prioritet (före symbolen)"],["idea","Idé eller insikt"]];
+  let s="", y=110;
+  const sym=(k,x,y)=>({task:`<circle cx="${x}" cy="${y}" r="9" class="inkf"/>`,
+    done:`<path class="sym" d="M${x-11} ${y-11}L${x+11} ${y+11}M${x-11} ${y+11}L${x+11} ${y-11}"/>`,
+    mig:`<path class="sym" d="M${x-10} ${y-13}L${x+10} ${y}L${x-10} ${y+13}"/>`,
+    sch:`<path class="sym" d="M${x+10} ${y-13}L${x-10} ${y}L${x+10} ${y+13}"/>`,
+    gone:`<circle cx="${x}" cy="${y}" r="9" class="inkf"/><path class="sym" d="M${x-20} ${y}H${x+20}"/>`,
+    event:`<circle class="sym" cx="${x}" cy="${y}" r="11"/>`, note:`<path class="sym" d="M${x-13} ${y}H${x+13}"/>`,
+    prio:T(x,y+18,"*",48,"","middle",700), idea:T(x,y+14,"!",40,"","middle",700)}[k]);
+  for(const [k,l] of items){ s+=sym(k,90,y-10)+T(150,y,l,32); y+=82; }
+  y+=30; s+=T(60,y,"SÅ HÄR FUNKAR DET",22,"mut","start",700); y+=56;
+  ["Varje dag: korta punkter i dagsloggen.","Varje vecka: planera veckans fokus.","Varje månad: flytta det som är kvar,","stryk det som inte spelar någon roll.",
+   "Platta: pennan skriver, fingret bläddrar och trycker.","Dator: börja bara skriva. Enter ger ny rad,","- anteckning, o händelse, x klar, Ctrl+Enter bockar av.","Klicka på • för att bocka av en uppgift."].forEach(t=>{ s+=T(60,y,t,28); y+=48; });
+  return s;
+}
+function tplColl(){
+  let s=""; const rh=1500/NCOLL;
+  for(let n=1;n<=NCOLL;n++){ const yb=50+(n-1)*rh, ty=yb+rh/2+10;
+    s+=T(70,ty,n,26,"mut","start",700)+T(130,ty,collTitles[n]||"",28,"","start",700)+T(1140,ty,"›",34,"mut","end",700);
+    s+=`<line class="rule" x1="60" y1="${yb+rh}" x2="1140" y2="${yb+rh}"/>`+HIT(40,yb,1120,rh,K.c(n)); }
+  return s;
+}
+function template(key){
+  const i=info(key);
+  return ({d:tplDay,t:()=>GRID(),c:()=>GRID(),m:tplMonth,w:tplWeek,year:tplYear,f:tplFuture,idx:tplIndex,key:tplKey,coll:tplColl}[i.kind])(i);
+}
+function heading(key){
+  const i=info(key);
+  switch(i.kind){
+    case "d": return {t:cap(WD[wday(i.x)])+" "+i.x.getDate()+" "+MON[i.month-1]+" "+i.year, c:[["v."+wk(i.x),K.w(i.x)],[cap(MON[i.month-1]),K.m(i.year,i.month)]]};
+    case "w": { const e=addD(i.x,6); return {t:"Vecka "+wk(i.x), c:[[i.x.getDate()+" "+MON[i.x.getMonth()].slice(0,3)+" till "+e.getDate()+" "+MON[e.getMonth()].slice(0,3),null],[cap(MON[i.month-1]),K.m(i.year,i.month)]]}; }
+    case "m": return {t:cap(MON[i.month-1])+" "+i.year, c:[["Månadslogg",null],["Uppgifter",K.t(i.year,i.month)],["År "+i.year,K.y(i.year)]]};
+    case "t": return {t:cap(MON[i.month-1])+" "+i.year, c:[["Uppgifter och mål",null],["Månadslogg",K.m(i.year,i.month)]]};
+    case "year": return {t:"Året "+i.year, c:[["Tryck på en dag för att öppna den",null]]};
+    case "f": return {t:"Framtidslogg "+i.year, c:[[MON[i.q*3]+" till "+MON[i.q*3+2],null]]};
+    case "idx": return {t:"Index", c:[]};
+    case "key": return {t:"Nyckel", c:[["Index","idx"]]};
+    case "coll": return {t:"Samlingar", c:[["Index","idx"]]};
+    case "c": return {t:"Samling "+i.n, c:[["Samlingar","coll"],["@title",null]]};
+  }
+}
+function railActive(key){
+  const i=info(key);
+  if(i.kind==="idx"||i.kind==="key") return "idx";
+  if(i.kind==="year") return "year"; if(i.kind==="f") return "fut";
+  if(i.kind==="coll"||i.kind==="c") return "coll";
+  if(i.month && i.year===railYear) return "m"+i.month;
+  return null;
+}
+
+/* ---------- rendering ---------- */
+const page=$("page"), tpl=$("tpl"), txt=$("txt"), cv=$("ink"), ctx=cv.getContext("2d");
+let scale=1;
+function layout(){
+  const st=$("stage"), r=st.getBoundingClientRect();
+  const aw=r.width-20, ah=r.height-20;
+  let w=Math.min(aw, ah*0.75); w=Math.max(200,w);
+  page.style.width=w+"px"; page.style.height=(w/0.75)+"px";
+  const dpr=Math.min(window.devicePixelRatio||1, 3);
+  cv.width=Math.round(w*dpr); cv.height=Math.round(w/0.75*dpr);
+  scale=cv.width/W; drawInk();
+}
+function strokePath(s){
+  const p=s.pts; ctx.strokeStyle=COLORS[s.c]||COLORS[0]; ctx.lineWidth=s.w*scale;
+  ctx.beginPath(); ctx.moveTo(p[0]*scale,p[1]*scale);
+  if(p.length<=2){ ctx.lineTo(p[0]*scale+0.1,p[1]*scale); }
+  for(let i=2;i<p.length-2;i+=2){ const mx=(p[i]+p[i+2])/2, my=(p[i+1]+p[i+3])/2; ctx.quadraticCurveTo(p[i]*scale,p[i+1]*scale,mx*scale,my*scale); }
+  if(p.length>2) ctx.lineTo(p[p.length-2]*scale,p[p.length-1]*scale);
+  ctx.stroke();
+}
+function drawInk(){
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.lineCap="round"; ctx.lineJoin="round";
+  if(!cur) return; for(const s of pg(cur).strokes) strokePath(s);
+}
+function drawTexts(){
+  txt.innerHTML = pg(cur).texts.map(t=>`<text x="${t.x}" y="${t.y}" data-tid="${t.id}" style="fill:${COLORS[t.c]||COLORS[0]}">${esc(t.t)}</text>`).join("");
+}
+function renderRail(){
+  $("yLab").textContent=railYear;
+  $("yPrev").disabled = railYear<=START.getFullYear(); $("yNext").disabled = railYear>=END.getFullYear();
+  const act=railActive(cur);
+  let h=`<button class="tab ${act==="idx"?"on":""}" data-go="idx">Index</button><button class="tab ${act==="year"?"on":""}" data-go="${K.y(railYear)}">År</button><button class="tab ${act==="fut"?"on":""}" data-go="${firstFuture(railYear)}">Fram</button>`;
+  for(let m=1;m<=12;m++){ const ok=mInR(railYear,m);
+    h+=`<button class="tab mo ${act==="m"+m?"on":""}" style="--mc:${MCOL[m][0]};--mi:${MCOL[m][1]}" ${ok?`data-go="${K.m(railYear,m)}"`:"disabled"}>${MON[m-1].slice(0,3)}</button>`; }
+  h+=`<button class="tab ${act==="coll"?"on":""}" data-go="coll">Saml</button>`;
+  $("tabs").innerHTML=h;
+}
+function renderHeader(){
+  const h=heading(cur); $("title").textContent=h.t; document.title="Bullet Journal";
+  const cr=$("crumbs"); cr.innerHTML="";
+  for(const [l,g] of h.c){
+    if(l==="@title"){ const n=info(cur).n, inp=document.createElement("input"); inp.id="collTitle"; inp.placeholder="Skriv en titel…"; inp.value=collTitles[n]||"";
+      inp.addEventListener("input",()=>{ collTitles[n]=inp.value; saveTitles(); }); cr.appendChild(inp); continue; }
+    const el=document.createElement(g?"button":"span"); el.textContent=l; if(g) el.dataset.go=g; cr.appendChild(el);
+  }
+  const [p,n]=neighbours(cur); $("prev").disabled=!p; $("next").disabled=!n;
+}
+function go(key, push=true){
+  if(!key || !valid(key)) return;
+  closeEditor(true);
+  flushAll();
+  cur=key; const i=info(key); if(i.year && i.kind!=="idx") railYear=i.year;
+  setAccent(i.month || (i.kind==="f" ? i.q*3+1 : todayD().getMonth()+1));
+  tpl.innerHTML=template(key); drawTexts(); drawInk(); renderHeader(); renderRail();
+  subscribe(key);
+  if(push && location.hash!=="#"+key){ try{ history.replaceState(null,"","#"+key); }catch(e){ location.hash=key; } }
+}
+
+/* ---------- inmatning ---------- */
+let drawing=null, erasing=null, touch=null;
+function toLogical(e){ const r=cv.getBoundingClientRect(); return [ (e.clientX-r.left)/r.width*W, (e.clientY-r.top)/r.height*H ]; }
+function linkAt(e){ for(const el of document.elementsFromPoint(e.clientX,e.clientY)){ const g=el.closest&&el.closest("[data-go]"); if(g) return g.dataset.go; } return null; }
+function textAt(e){ for(const el of document.elementsFromPoint(e.clientX,e.clientY)){ if(el.dataset && el.dataset.tid) return el.dataset.tid; } return null; }
+
+cv.addEventListener("pointerdown", e=>{
+  if(e.pointerType==="touch"){ touch={x:e.clientX,y:e.clientY,t:Date.now(),id:e.pointerId}; return; }
+  if(e.button!==0 && !(e.pointerType==="pen" && e.buttons===32)) return;
+  e.preventDefault();
+  const [x,y]=toLogical(e);
+  const eraser = tool==="erase" || e.buttons===32 || e.button===5;
+  if(tool==="text" && !eraser){ const tid=textAt(e); if(tid && clickText(e,tid)) return; if(!tid && e.pointerType==="mouse"){ const g=linkAt(e); if(g){ go(g); return; } } openEditor(x,y,tid); return; }
+  cv.setPointerCapture(e.pointerId);
+  if(eraser){ erasing={gone:[],gt:[]}; eraseAt(x,y); return; }
+  drawing={id:rid(), c:color, w:3.2, pts:[Math.round(x),Math.round(y)], sx:e.clientX, sy:e.clientY, moved:false, type:e.pointerType};
+  ctx.lineCap="round"; ctx.strokeStyle=COLORS[color]; ctx.lineWidth=3.2*scale;
+});
+cv.addEventListener("pointermove", e=>{
+  if(touch) return;
+  if(erasing){ for(const ev of (e.getCoalescedEvents?e.getCoalescedEvents():[e])){ const [x,y]=toLogical(ev); eraseAt(x,y); } return; }
+  if(!drawing) return;
+  const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+  for(const ev of evs){
+    const [x,y]=toLogical(ev), p=drawing.pts, lx=p[p.length-2], ly=p[p.length-1];
+    if(Math.hypot(x-lx,y-ly)<1.6) continue;
+    if(Math.hypot(ev.clientX-drawing.sx, ev.clientY-drawing.sy)>5) drawing.moved=true;
+    ctx.beginPath(); ctx.moveTo(lx*scale,ly*scale); ctx.lineTo(x*scale,y*scale); ctx.stroke();
+    p.push(Math.round(x),Math.round(y));
+  }
+});
+function endPointer(e){
+  if(touch && e.pointerId===touch.id){
+    const dx=e.clientX-touch.x, dy=e.clientY-touch.y, dt=Date.now()-touch.t; touch=null;
+    if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.5 && dt<800){ const [p,n]=neighbours(cur); go(dx<0?n:p); return; }
+    if(Math.hypot(dx,dy)<12){ const g=linkAt(e); if(g) go(g); }
+    return;
+  }
+  if(erasing){
+    if(erasing.gone.length||erasing.gt.length){ (undoStack[cur]=undoStack[cur]||[]).push({type:"erase",strokes:erasing.gone,texts:erasing.gt}); markDirty(cur); }
+    erasing=null; return;
+  }
+  if(!drawing) return;
+  const s=drawing; drawing=null;
+  // Musklick (inte penna) utan rörelse på en länk = navigera
+  if(!s.moved && s.type==="mouse"){ const g=linkAt(e); if(g){ drawInk(); go(g); return; } }
+  const st={id:s.id,c:s.c,w:s.w,pts:s.pts};
+  pg(cur).strokes.push(st); (undoStack[cur]=undoStack[cur]||[]).push({type:"add",id:st.id});
+  drawInk(); markDirty(cur);
+}
+cv.addEventListener("pointerup", endPointer);
+cv.addEventListener("pointercancel", e=>{ if(touch&&e.pointerId===touch.id) touch=null; if(drawing){ drawing=null; drawInk(); } if(erasing) endPointer(e); });
+
+function eraseAt(x,y){
+  const p=pg(cur), r=16, keep=[]; let hit=false;
+  for(const s of p.strokes){
+    let near=false; const a=s.pts;
+    for(let i=0;i<a.length;i+=2){ if(Math.abs(a[i]-x)<r && Math.abs(a[i+1]-y)<r){ near=true; break; } }
+    if(near){ erasing.gone.push(s); (removed[cur]=removed[cur]||new Set()).add(s.id); hit=true; } else keep.push(s);
+  }
+  p.strokes=keep;
+  const kt=[];
+  for(const t of p.texts){ const w=t.t.length*15; if(x>t.x-6&&x<t.x+w&&y>t.y-30&&y<t.y+8){ erasing.gt.push(t); (removed[cur]=removed[cur]||new Set()).add(t.id); hit=true; } else kt.push(t); }
+  p.texts=kt;
+  if(hit){ drawInk(); drawTexts(); }
+}
+function undo(){
+  const st=undoStack[cur]; if(!st||!st.length) return;
+  const a=st.pop(), p=pg(cur);
+  if(a.type==="add"){ p.strokes=p.strokes.filter(s=>s.id!==a.id); (removed[cur]=removed[cur]||new Set()).add(a.id); }
+  else if(a.type==="erase"){ p.strokes.push(...a.strokes); p.texts.push(...a.texts); a.strokes.concat(a.texts).forEach(o=>{ removed[cur]&&removed[cur].delete(o.id); (restored[cur]=restored[cur]||new Set()).add(o.id); if(o.t!==undefined) o.u=Date.now(); }); }
+  else if(a.type==="text"){ if(a.before){ const t=p.texts.find(t=>t.id===a.id)||p.texts[p.texts.push({...a.before})-1]; Object.assign(t, a.before, {u:Date.now()}); removed[cur]&&removed[cur].delete(a.id); (restored[cur]=restored[cur]||new Set()).add(a.id); } else { p.texts=p.texts.filter(t=>t.id!==a.id); (removed[cur]=removed[cur]||new Set()).add(a.id);} }
+  drawInk(); drawTexts(); markDirty(cur);
+}
+
+/* text: skriv med tangentbordet */
+let editor=null;
+const BULLET_KINDS = new Set(["d","t","c","w","f"]);
+const SYMS = "•×>○–<";
+// Radsystem per sida: var raderna ligger så att texten hamnar snyggt mellan prickarna/linjerna
+function rows(){
+  const i=info(cur);
+  if(i.kind==="m"){ const nd=dim(i.year,i.month), rh=1500/nd; return {x0:200, snap:y=>{ const r=Math.max(0,Math.min(nd-1,Math.floor((y-50)/rh))); return Math.round(50+r*rh+rh/2+10); }, step:rh, top:50+rh/2+10, bottom:1550}; }
+  if(i.kind==="f"){ return {x0:70, snap:y=>Math.round((y-30)/56)*56+30+24, step:56, top:150, bottom:1540}; }
+  if(i.kind==="w"){ return {x0:60, snap:y=>{ const r=Math.floor((y-40)/380), b=40+r*380; const yy=Math.max(b+100,Math.min(b+370,y)); return Math.round(b+100+Math.round((yy-b-100)/40)*40); }, step:40, top:140, bottom:1540, box:true}; }
+  if(i.kind==="idx"){ return {x0:60, snap:y=>Math.round(y/56)*56, step:56, top:1000, bottom:1540}; }
+  return {x0:60, snap:y=>Math.max(80,Math.round((y-50)/40)*40+50+8), step:40, top:90, bottom:1550};
+}
+function weekBoxLeft(x){ return x<600?60:620; }
+function nextFreeLine(){
+  const R=rows(), p=pg(cur);
+  const left = p.texts.filter(t=>t.x<R.x0+80);
+  const last = left.reduce((m,t)=>Math.max(m,t.y), 0);
+  return last ? R.snap(last+R.step) : R.top;
+}
+function decorate(v){
+  if(!BULLET_KINDS.has(info(cur).kind) || !v) return v;
+  if(SYMS.includes(v[0])) return v;
+  const m=v.match(/^(-|o|x|>|<|\*|!)\s+(.*)$/);
+  if(m){ const map={"-":"– ","o":"○ ","x":"× ",">":"> ","<":"< ","*":"* • ","!":"! "}; return map[m[1]]+m[2]; }
+  return "• "+v;
+}
+function openEditor(x,y,tid,initial){
+  closeEditor(true);
+  const p=pg(cur), R=rows(); const existing = tid ? p.texts.find(t=>t.id===tid) : null;
+  const el=document.createElement("input"); el.id="editor"; el.type="text";
+  el.placeholder = BULLET_KINDS.has(info(cur).kind) ? "Skriv… ( - anteckning,  o händelse,  x klar )" : "Skriv…";
+  el.setAttribute("autocomplete","off"); el.setAttribute("spellcheck","true");
+  const k=page.clientWidth/W;
+  let tx, ty;
+  if(existing){ tx=existing.x; ty=existing.y; }
+  else { ty=R.snap(y); tx = R.box ? weekBoxLeft(x) : (info(cur).kind==="m" || x < R.x0+120 ? R.x0 : Math.round(x)); }
+  el.style.left=(tx*k-6)+"px"; el.style.top=((ty-30)*k-4)+"px"; el.style.fontSize=(30*k)+"px";
+  const right = R.box ? (tx<600?580:1140) : 1150;
+  el.style.width=Math.max(160,(right-tx)*k)+"px";
+  if(existing){ el.value=existing.t; el.style.color=COLORS[existing.c]||COLORS[0]; } else el.style.color=COLORS[color];
+  if(initial) el.value=initial;
+  page.appendChild(el); el.focus();
+  if(existing){ const n=el.value.length; el.setSelectionRange(n,n); }
+  editor={el, tid:existing&&existing.id, x:tx, y:ty};
+  el.addEventListener("keydown", ev=>{
+    const ed=editor; if(!ed||ed.el!==el) return;
+    if(ev.key==="Enter" && (ev.ctrlKey||ev.metaKey)){ ev.preventDefault(); toggleDone(el); return; }
+    if(ev.key==="Enter"||ev.key==="ArrowDown"){
+      ev.preventDefault(); const nx=ed.x, ny=rows().snap(ed.y+rows().step); closeEditor(true);
+      if(ny<=rows().bottom){ const below=lineAt(nx,ny); openEditor(nx,ny,below?below.id:null); } return; }
+    if(ev.key==="ArrowUp"){
+      ev.preventDefault(); const nx=ed.x, ny=rows().snap(ed.y-rows().step); closeEditor(true);
+      if(ny>=rows().top-1){ const above=lineAt(nx,ny); openEditor(nx,ny,above?above.id:null); } return; }
+    if(ev.key==="Backspace" && el.value===""){
+      ev.preventDefault(); const nx=ed.x, ny=rows().snap(ed.y-rows().step); closeEditor(true);
+      const above=lineAt(nx,ny); if(above) openEditor(nx,ny,above.id); return; }
+    if(ev.key==="Escape"||ev.key==="Tab"){ ev.preventDefault(); closeEditor(true); }
+  });
+  el.addEventListener("blur", ()=>setTimeout(()=>{ if(editor && editor.el===el) closeEditor(true); },0));
+}
+function lineAt(x,y){ return pg(cur).texts.find(t=>Math.abs(t.y-y)<8 && Math.abs(t.x-x)<40); }
+function toggleDone(el){
+  let v=el.value; if(!v) return;
+  if(v.startsWith("• ")) v="× "+v.slice(2); else if(v.startsWith("× ")) v="• "+v.slice(2);
+  else if(!SYMS.includes(v[0])) v="× "+v;
+  el.value=v;
+}
+function closeEditor(save){
+  if(!editor) return; const {el,tid,x,y}=editor; editor=null;
+  const raw=el.value.replace(/\s+$/,""); el.remove();
+  if(!save) return;
+  const p=pg(cur), us=(undoStack[cur]=undoStack[cur]||[]);
+  if(tid){ const t=p.texts.find(t=>t.id===tid); const v=raw.trim()?raw:""; if(!t||t.t===v) return;
+    us.push({type:"text",id:tid,before:{...t}});
+    if(v){ t.t=v; t.u=Date.now(); } else { p.texts=p.texts.filter(o=>o.id!==tid); (removed[cur]=removed[cur]||new Set()).add(tid); } }
+  else { const v=decorate(raw.trim()); if(!v) return; const id=rid(); p.texts.push({id,x,y,t:v,c:color,u:Date.now()}); us.push({type:"text",id,before:null}); }
+  drawTexts(); markDirty(cur);
+}
+// Klick på en punkts symbol bockar av den
+function clickText(e,tid){
+  const t=pg(cur).texts.find(o=>o.id===tid); if(!t) return false;
+  const [x]=toLogical(e);
+  if(x < t.x+26 && (t.t.startsWith("• ")||t.t.startsWith("× "))){
+    (undoStack[cur]=undoStack[cur]||[]).push({type:"text",id:tid,before:{...t}});
+    t.t = (t.t[0]==="•"?"× ":"• ")+t.t.slice(2); t.u=Date.now(); drawTexts(); markDirty(cur); return true; }
+  return false;
+}
+
+/* ---------- knappar ---------- */
+function setTool(t){ tool=t; closeEditor(true);
+  [["tPen","pen"],["tErase","erase"],["tText","text"]].forEach(([id,v])=>$(id).setAttribute("aria-pressed",String(v===t)));
+  page.classList.toggle("tool-text",t==="text"); page.classList.toggle("tool-erase",t==="erase"); }
+$("tPen").onclick=()=>setTool("pen"); $("tErase").onclick=()=>setTool("erase"); $("tText").onclick=()=>setTool("text");
+$("undo").onclick=undo;
+$("today").onclick=()=>go(K.d(clampD(todayD())));
+$("prev").onclick=()=>go(neighbours(cur)[0]); $("next").onclick=()=>go(neighbours(cur)[1]);
+$("yPrev").onclick=()=>{ railYear--; renderRail(); if(cur==="idx") tpl.innerHTML=template(cur); };
+$("yNext").onclick=()=>{ railYear++; renderRail(); if(cur==="idx") tpl.innerHTML=template(cur); };
+document.addEventListener("click", e=>{ const b=e.target.closest(".tab[data-go], .crumbs [data-go]"); if(b) go(b.dataset.go); });
+$("colors").innerHTML=COLORS.map((c,i)=>`<button class="sw" style="background:${c}" aria-label="${CNAMES[i]}" aria-pressed="${i===0}" data-c="${i}"></button>`).join("");
+$("colors").addEventListener("click", e=>{ const b=e.target.closest("[data-c]"); if(!b) return; color=+b.dataset.c;
+  $("colors").querySelectorAll("[data-c]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  if(tool==="erase") setTool("pen"); });
+document.addEventListener("keydown", e=>{
+  if(e.target.tagName==="INPUT" || !dlg.hidden) return;
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="z"){ e.preventDefault(); undo(); return; }
+  if(e.key==="ArrowLeft") go(neighbours(cur)[0]); else if(e.key==="ArrowRight") go(neighbours(cur)[1]);
+  else if(e.key.length===1 && !e.ctrlKey && !e.metaKey && !e.altKey && e.key!==" "){
+    // Börja skriva var som helst: texten hamnar på nästa lediga rad
+    e.preventDefault(); if(tool!=="text") setTool("text");
+    openEditor(rows().x0, nextFreeLine(), null, e.key);
+  }
+});
+window.addEventListener("hashchange", ()=>{ const k=location.hash.slice(1); if(k!==cur) go(k,false); });
+window.addEventListener("resize", ()=>{ layout(); });
+window.addEventListener("pagehide", flushAll);
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) flushAll(); });
+
+/* ---------- start ---------- */
+const startKey = valid(location.hash.slice(1)) ? location.hash.slice(1) : K.d(clampD(todayD()));
+layout(); setTool(tool); go(startKey);
+/* ---------- synk via Cloudflare Worker ---------- */
+const CFG = { get(){ return LS.get("cfg")||{}; }, set(v){ LS.set("cfg",v); } };
+function makeDb(url, key){
+  url = url.replace(/\/+$/,"");
+  const H = { "Authorization":"Bearer "+key, "Content-Type":"application/json" };
+  const call = async (method, path, body, q="") => {
+    const r = await fetch(url+"/doc/"+path+q, { method, headers:H, body: body?JSON.stringify(body):undefined, cache:"no-store" });
+    if(r.status===401) throw {code:"auth"};
+    if(r.status===413) throw {code:"quota_exceeded"};
+    if(!r.ok) throw {code:"unavailable"};
+    return r.json();
+  };
+  const watchers = new Set();
+  async function poll(w){
+    if(w.dead || w.busy) return; w.busy=true;
+    try{
+      const j = await call("GET", w.path, null, "?since="+(w.at||0));
+      if(!j.unchanged && !w.dead && !(w.got && (j.at||0)===w.at)){
+        w.at = j.at||0; w.got=true;
+        w.next({ exists:!!j.exists, data:()=>j.body, metadata:{hasPendingWrites:false, fromCache:false} });
+      }
+      online(true);
+    }catch(e){ online(false, e); }
+    w.busy=false;
+  }
+  setInterval(()=>{ if(!document.hidden) watchers.forEach(poll); }, 8000);
+  const wake=()=>watchers.forEach(poll);
+  window.addEventListener("focus", wake); document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) wake(); });
+  window.addEventListener("online", ()=>{ wake(); flushAll(); });
+  return {
+    test: () => fetch(url+"/ping", {headers:H, cache:"no-store"}).then(r=>r.status),
+    doc: path => ({
+      set: async body => { const j = await call("PUT", path, body); watchers.forEach(w=>{ if(w.path===path){ w.at=j.at; w.got=true; } }); return j; },
+      onSnapshot(next, err){ const w={path,next,err,at:0}; watchers.add(w); poll(w); return ()=>{ w.dead=true; watchers.delete(w); }; }
+    })
+  };
+}
+let wasOnline=true;
+function online(ok, e){
+  if(ok){ if(!wasOnline || /Offline|Ansluter/.test(statusEl.textContent)) status(dirty.size?"Sparar…":"Synkad"); wasOnline=true; return; }
+  wasOnline=false;
+  status(e && e.code==="auth" ? "Fel lösenord, öppna inställningar" : "Offline, sparas på enheten", true);
+}
+// Sidor som ändrades offline förra gången skickas upp igen
+try{ for(let n=0;n<localStorage.length;n++){ const k=localStorage.key(n); if(k && k.startsWith("bujo:p:")){ const key=k.slice(7); if(valid(key)) pg(key); } } }catch(e){}
+
+function connect(){
+  if(unsub){ unsub(); unsub=null; } if(metaUnsub){ metaUnsub(); metaUnsub=null; }
+  const c=CFG.get();
+  if(!c.url || !c.key){ db=null; status("Ingen synk, tryck på kugghjulet", true); return; }
+  db = makeDb(c.url, c.key);
+  status(dirty.size?"Sparar…":"Ansluter…");
+  subscribe(cur);
+  metaUnsub = db.doc("meta/coll").onSnapshot(snap=>{
+    if(snap.exists){ collTitles = {...collTitles, ...(snap.data().t||{})}; LS.set("meta:coll",collTitles);
+      if(cur==="coll") tpl.innerHTML=template(cur);
+      const ip=$("collTitle"); if(ip && document.activeElement!==ip) ip.value=collTitles[info(cur).n]||""; }
+  }, ()=>{});
+  flushAll();
+}
+/* inställningar */
+const dlg=$("dlg");
+function openSettings(){ const c=CFG.get(); $("sUrl").value=c.url||""; $("sKey").value=c.key||""; $("sMsg").textContent=""; dlg.hidden=false; $("sUrl").focus(); }
+$("settings").onclick=openSettings;
+$("sCancel").onclick=()=>{ dlg.hidden=true; };
+$("dlgForm").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const url=$("sUrl").value.trim(), key=$("sKey").value;
+  $("sMsg").textContent="Testar…";
+  try{
+    const st = await makeDb(url,key).test();
+    if(st===200){ CFG.set({url,key}); $("sMsg").textContent="Klart, synken fungerar."; connect(); setTimeout(()=>{ dlg.hidden=true; },700); }
+    else if(st===401) $("sMsg").textContent="Fel lösenord.";
+    else $("sMsg").textContent="Workern svarade med fel ("+st+").";
+  }catch(e){ $("sMsg").textContent="Hittar inte adressen. Kontrollera att den är rätt."; }
+});
+connect();
+if(!CFG.get().url) setTimeout(openSettings, 400);
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+</body>
+</html>
+
