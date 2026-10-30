@@ -1,6 +1,6 @@
-# Bullet Journal
+# Den skandinaviske arkitekten
 
-En webbapp för bullet journaling. På Boox plattan skriver man med pennan och på datorn med tangentbordet eller musen. Allt synkas mellan enheterna via en egen Cloudflare Worker.
+En webbapp för planering och anteckningar i bullet journal stil. På Boox plattan skriver man med pennan och på datorn med tangentbordet eller musen. Allt synkas mellan enheterna via en egen Cloudflare Worker.
 
 ## Filer
 
@@ -18,25 +18,25 @@ En webbapp för bullet journaling. På Boox plattan skriver man med pennan och p
 cd worker
 npm install -g wrangler
 wrangler login
-wrangler d1 create bujo
+wrangler d1 create arkitekten
 ```
 
 Kopiera `database_id` som visas och klistra in den i `wrangler.toml`. Skriv också in adressen till GitHub Pages i `ALLOWED_ORIGIN`, till exempel `https://dittnamn.github.io`.
 
 ```bash
-wrangler d1 execute bujo --remote --file=schema.sql
+wrangler d1 execute arkitekten --remote --file=schema.sql
 wrangler secret put SECRET     # välj ett långt lösenord
 wrangler deploy
 ```
 
-Spara adressen som visas, till exempel `https://bujo-sync.dittnamn.workers.dev`.
+Spara adressen som visas, till exempel `https://arkitekten-sync.dittnamn.workers.dev`.
 
 ## Steg 2: Appen på GitHub Pages
 
-1. Skapa ett repo, till exempel `bullet-journal`.
+1. Skapa ett repo, till exempel `den-skandinaviske-arkitekten`.
 2. Lägg `index.html`, `manifest.webmanifest`, `sw.js`, `icon-192.png` och `icon-512.png` i roten. Mappen `worker` kan ligga med, den används inte av sidan.
 3. Gå till Settings, Pages, välj grenen `main` och mappen `/ (root)`.
-4. Appen finns sedan på `https://dittnamn.github.io/bullet-journal/`.
+4. Appen finns sedan på `https://dittnamn.github.io/den-skandinaviske-arkitekten/`.
 
 ## Steg 3: På varje enhet
 

@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Bullet Journal</title>
+<title>Den skandinaviske arkitekten</title>
 <meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Liter&family=Playfair+Display:wght@600;700;800;900&display=swap">
 <style>
 /* Layout: verktygsrad överst, en sida i 3:4 som fyller skärmen, flikrad till höger som i ett riktigt anteckningsblock.
    Medvetet ett enda ljust "papper"-tema: det ska se likadant ut på e-ink och dator. */
 :root{
   --paper:#ffffff; --ink:#16181d; --muted:#6b6f78; --rule:#c9ccd3; --dot:#b4b8c1;
   --shade:#f1f2f5; --accent:#1f4fd1; --accent-ink:#ffffff; --desk:#e7e8ec; --tint:#f1f2f5;
-  --display:"Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
-  --body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display:"Playfair Display", Georgia, "Times New Roman", serif;
+  --body:"Liter", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme:light;
 }
 html,body{height:100%}
@@ -52,7 +52,7 @@ body{background:var(--desk);color:var(--ink);font-family:var(--body);overflow:hi
 #ink{touch-action:none;cursor:crosshair}
 .page.tool-text #ink{cursor:text}
 .page.tool-erase #ink{cursor:cell}
-svg text{font-family:var(--body);fill:var(--ink)}
+svg text{font-family:var(--body);fill:var(--ink)} svg text.hd{font-family:var(--display)}
 .tpl .dot{fill:var(--dot)} .tpl .rule{stroke:var(--rule);stroke-width:1.5}
 .tpl .hard{stroke:var(--ink);stroke-width:2} .tpl .wk{fill:var(--tint)}
 .tpl .mut{fill:var(--muted)} .tpl .off{fill:var(--rule)} .tpl .inkf{fill:var(--ink)}
@@ -101,7 +101,7 @@ body{margin:0;font-size:14px}
 
 <div class="app">
   <header class="bar">
-    <div class="ttl"><h1 id="title">Bullet Journal</h1><div class="crumbs" id="crumbs"></div></div>
+    <div class="ttl"><h1 id="title">Den skandinaviske arkitekten</h1><div class="crumbs" id="crumbs"></div></div>
     <div class="grp">
       <button class="btn" id="today">Idag</button>
       <button class="btn" id="prev" aria-label="Föregående sida">‹</button>
@@ -136,7 +136,7 @@ body{margin:0;font-size:14px}
   <form id="dlgForm">
     <h2>Synk</h2>
     <p>Fyll i adressen till din Cloudflare Worker och lösenordet du valde. Det sparas bara på den här enheten.</p>
-    <label for="sUrl">Synkadress<input id="sUrl" type="url" placeholder="https://bujo-sync.dittnamn.workers.dev" autocomplete="off"></label>
+    <label for="sUrl">Synkadress<input id="sUrl" type="url" placeholder="https://arkitekten-sync.bella-sassibrass.workers.dev" autocomplete="off"></label>
     <label for="sKey">Lösenord<input id="sKey" type="password" autocomplete="current-password"></label>
     <div class="msg" id="sMsg" aria-live="polite"></div>
     <div class="row"><button class="btn" type="button" id="sCancel">Stäng</button><button class="btn" type="submit" style="background:var(--ink);color:var(--paper)">Spara och testa</button></div>
@@ -296,7 +296,7 @@ function saveTitles(){
 /* ---------- mallar (SVG) ---------- */
 const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const T = (x,y,s,size=28,cls="",anchor="start",w=400,go="") =>
-  `<text x="${x}" y="${y}" font-size="${size}" font-weight="${w}" text-anchor="${anchor}" class="${cls}"${go?` data-go="${go}"`:""}>${esc(s)}</text>`;
+  `<text x="${x}" y="${y}" font-size="${size}" font-weight="${w}" text-anchor="${anchor}" class="${cls}${w>=700&&size>=30?" hd":""}"${go?` data-go="${go}"`:""}>${esc(s)}</text>`;
 const HIT = (x,y,w,h,go) => `<rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" data-go="${go}"/>`;
 const GRID = (top=40) => `<defs><pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse" x="0" y="${top%40}"><circle class="dot" cx="20" cy="20" r="2.4"/></pattern></defs><rect x="40" y="${top}" width="1120" height="${1560-top}" fill="url(#g)"/>`;
 const LINES = (y0,y1,step=56,x0=60,x1=1140) => { let s=""; for(let y=y0;y<=y1;y+=step) s+=`<line class="rule" x1="${x0}" y1="${y}" x2="${x1}" y2="${y}"/>`; return s; };
@@ -458,7 +458,7 @@ function renderRail(){
   $("tabs").innerHTML=h;
 }
 function renderHeader(){
-  const h=heading(cur); $("title").textContent=h.t; document.title="Bullet Journal";
+  const h=heading(cur); $("title").textContent=h.t; document.title=h.t+" · Den skandinaviske arkitekten";
   const cr=$("crumbs"); cr.innerHTML="";
   for(const [l,g] of h.c){
     if(l==="@title"){ const n=info(cur).n, inp=document.createElement("input"); inp.id="collTitle"; inp.placeholder="Skriv en titel…"; inp.value=collTitles[n]||"";
@@ -737,7 +737,7 @@ function connect(){
 }
 /* inställningar */
 const dlg=$("dlg");
-function openSettings(){ const c=CFG.get(); $("sUrl").value=c.url||""; $("sKey").value=c.key||""; $("sMsg").textContent=""; dlg.hidden=false; $("sUrl").focus(); }
+function openSettings(){ const c=CFG.get(); $("sUrl").value=c.url||"https://arkitekten-sync.bella-sassibrass.workers.dev"; $("sKey").value=c.key||""; $("sMsg").textContent=""; dlg.hidden=false; $("sUrl").focus(); }
 $("settings").onclick=openSettings;
 $("sCancel").onclick=()=>{ dlg.hidden=true; };
 $("dlgForm").addEventListener("submit", async ev=>{
@@ -752,7 +752,7 @@ $("dlgForm").addEventListener("submit", async ev=>{
   }catch(e){ $("sMsg").textContent="Hittar inte adressen. Kontrollera att den är rätt."; }
 });
 connect();
-if(!CFG.get().url) setTimeout(openSettings, 400);
+if(!CFG.get().url) setTimeout(()=>{ openSettings(); $("sKey").focus(); }, 400);
 if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
 </script>
