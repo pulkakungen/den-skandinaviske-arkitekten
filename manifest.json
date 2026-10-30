@@ -1,0 +1,22 @@
+{
+  "name": "Den skandinaviske arkitekten",
+  "short_name": "Arkitekten",
+  "description": "Emils digitala bullet journal",
+  "id": "./?app=arkitekten-1",
+  "start_url": "./#day",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f1e6",
+  "theme_color": "#f6f1e6",
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "params": { "title": "share_title", "text": "share_text", "url": "share_url" }
+  },
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
