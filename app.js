@@ -4096,7 +4096,7 @@ function viewSettings() {
     ) +
     block(
       "Appen",
-      `<label class="check-field"><input type="checkbox" data-change="whiteBg" ${document.documentElement.classList.contains("white-bg") ? "checked" : ""} /> Helvit bakgrund utan prickar (för läsplattan)</label>
+      `<label class="check-field"><input type="checkbox" data-change="whiteBg" ${document.documentElement.classList.contains("white-bg") ? "checked" : ""} /> Vit bakgrund (för läsplattan)</label>
        <p class="hint">Version ${APP_VERSION}-arkitekten. Visar plattan en äldre version än datorn, tryck här. Det du skrivit påverkas inte.</p>
        <div class="btn-row"><button class="btn-small" data-act="forceUpdate">Hämta senaste versionen</button><button class="btn-small ghost" data-act="dedupe">Ta bort dubbletter</button></div>`
     ) +
@@ -4130,7 +4130,7 @@ Object.assign(actions, {
   gicsFetch: () => gicsFetch(true)
 });
 
-// Helvit bakgrund på Boox (e-ink). Känns igen automatiskt, går att slå av och på per enhet.
+// Vit bakgrund på Boox (e-ink). Känns igen automatiskt, går att slå av och på per enhet.
 function applyWhiteBg() {
   const auto = /BOOX|Onyx|NoteAir|Note Air|Tab ?Ultra|Go ?10|Go103|Palma|Poke|Nova ?Air|Leaf/i.test(navigator.userAgent);
   document.documentElement.classList.toggle("white-bg", local.whiteBg ?? auto);
@@ -4178,6 +4178,111 @@ setTimeout(() => {
   const g = get("meta", "gcal");
   if (settings().googleIcs && (!g || Date.now() - g.fetchedAt > 30 * 60000)) gicsFetch(false);
 }, 1500);
+
+/* ---------------- Möten i andra tidszoner ---------------- */
+// Outlook och Google skickar ofta mötets egen tidszon (TZID), t.ex. ett möte
+// kl 9 i New York. Tiden räknas om till den tid som gäller där enheten är,
+// tillfälle för tillfälle, så även sommartid som byts olika datum blir rätt.
+const WIN_TZ = {
+  "W. Europe Standard Time": "Europe/Stockholm", "Romance Standard Time": "Europe/Paris", "Central Europe Standard Time": "Europe/Budapest",
+  "Central European Standard Time": "Europe/Warsaw", "GMT Standard Time": "Europe/London", "Greenwich Standard Time": "Atlantic/Reykjavik",
+  "FLE Standard Time": "Europe/Helsinki", "GTB Standard Time": "Europe/Bucharest", "E. Europe Standard Time": "Europe/Chisinau",
+  "Russian Standard Time": "Europe/Moscow", "Turkey Standard Time": "Europe/Istanbul", "Israel Standard Time": "Asia/Jerusalem",
+  "Egypt Standard Time": "Africa/Cairo", "South Africa Standard Time": "Africa/Johannesburg", "W. Central Africa Standard Time": "Africa/Lagos",
+  "E. Africa Standard Time": "Africa/Nairobi", "Arabian Standard Time": "Asia/Dubai", "Arab Standard Time": "Asia/Riyadh",
+  "Iran Standard Time": "Asia/Tehran", "Pakistan Standard Time": "Asia/Karachi", "India Standard Time": "Asia/Kolkata",
+  "Nepal Standard Time": "Asia/Kathmandu", "Bangladesh Standard Time": "Asia/Dhaka", "SE Asia Standard Time": "Asia/Bangkok",
+  "Singapore Standard Time": "Asia/Singapore", "China Standard Time": "Asia/Shanghai", "Taipei Standard Time": "Asia/Taipei",
+  "Tokyo Standard Time": "Asia/Tokyo", "Korea Standard Time": "Asia/Seoul", "W. Australia Standard Time": "Australia/Perth",
+  "Cen. Australia Standard Time": "Australia/Adelaide", "AUS Eastern Standard Time": "Australia/Sydney", "E. Australia Standard Time": "Australia/Brisbane",
+  "New Zealand Standard Time": "Pacific/Auckland", "Hawaiian Standard Time": "Pacific/Honolulu", "Alaskan Standard Time": "America/Anchorage",
+  "Pacific Standard Time": "America/Los_Angeles", "US Mountain Standard Time": "America/Phoenix", "Mountain Standard Time": "America/Denver",
+  "Central Standard Time": "America/Chicago", "Central Standard Time (Mexico)": "America/Mexico_City", "Eastern Standard Time": "America/New_York",
+  "US Eastern Standard Time": "America/Indianapolis", "SA Pacific Standard Time": "America/Bogota", "Atlantic Standard Time": "America/Halifax",
+  "Newfoundland Standard Time": "America/St_Johns", "E. South America Standard Time": "America/Sao_Paulo", "Argentina Standard Time": "America/Buenos_Aires",
+  "Pacific SA Standard Time": "America/Santiago", "SA Western Standard Time": "America/La_Paz", "UTC": "UTC", "Coordinated Universal Time": "UTC"
+};
+const LOCAL_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return null; } })();
+function tzName(tzid) {
+  if (!tzid) return null;
+  const name = WIN_TZ[tzid] || tzid.replace(/^\/[^/]*\/[^/]*\//, ""); // "/mozilla.org/.../Europe/Paris" -> "Europe/Paris"
+  try { new Intl.DateTimeFormat("en", { timeZone: name }); return name; } catch (e) { return null; }
+}
+function tzOffsetMs(tz, utcMs) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    .formatToParts(new Date(utcMs)).map((x) => [x.type, x.value]));
+  return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second) - utcMs;
+}
+// Väggtid i en zon -> { date, time } här
+function zonedToLocal(date, time, tz) {
+  const [y, mo, d] = date.split("-").map(Number);
+  const [h, mi] = time.split(":").map(Number);
+  const guess = Date.UTC(y, mo - 1, d, h, mi);
+  let utc = guess - tzOffsetMs(tz, guess);
+  utc = guess - tzOffsetMs(tz, utc);
+  const local = new Date(utc);
+  return { date: ymd(local), time: `${pad(local.getHours())}:${pad(local.getMinutes())}` };
+}
+
+function icsTime(prop) {
+  const v = prop.value.trim();
+  const m = v.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/);
+  if (!m) return null;
+  if (!m[4] || prop.params.VALUE === "DATE") return { date: `${m[1]}-${m[2]}-${m[3]}`, time: null };
+  if (m[7]) {
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]));
+    return { date: ymd(d), time: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
+  }
+  const out = { date: `${m[1]}-${m[2]}-${m[3]}`, time: `${m[4]}:${m[5]}` };
+  const tz = tzName(prop.params.TZID);
+  if (tz && tz !== LOCAL_TZ) out.tz = tz;
+  return out;
+}
+
+function expandIcs(events, from, to) {
+  const moved = new Map();
+  for (const ev of events) if (ev.recurrenceId && ev.uid) {
+    if (!moved.has(ev.uid)) moved.set(ev.uid, new Set());
+    moved.get(ev.uid).add(ev.recurrenceId.date);
+  }
+  const res = [];
+  const push = (ev, date) => {
+    const ad = !ev.start.time;
+    const lenDays = ev.end ? Math.max(0, daysBetween(ev.start.date, ev.end.date)) : 0;
+    let sDate = date, sTime = ev.start.time;
+    let eDate = addDays(date, lenDays), eTime = (ev.end && ev.end.time) || ev.start.time;
+    if (!ad && ev.start.tz) ({ date: sDate, time: sTime } = zonedToLocal(sDate, sTime, ev.start.tz));
+    if (!ad && ev.end && ev.end.tz) ({ date: eDate, time: eTime } = zonedToLocal(eDate, eTime, ev.end.tz));
+    else if (!ad && ev.start.tz) ({ date: eDate, time: eTime } = zonedToLocal(eDate, eTime, ev.start.tz));
+    res.push({
+      src: "outlook",
+      t: ev.title || "(utan titel)",
+      ad,
+      s: ad ? sDate : `${sDate}T${sTime}`,
+      e: ad ? eDate : `${eDate}T${eTime}`,
+      sd: sDate,
+      ed: ad ? addDays(eDate, lenDays ? -1 : 0) : eDate,
+      ...(ev.start.tz ? { tz: ev.start.tz } : {})
+    });
+  };
+  for (const ev of events) {
+    if (ev.cancelled) continue;
+    if (!ev.rrule || ev.recurrenceId) {
+      if (ev.start.date <= to && (ev.end ? ev.end.date : ev.start.date) >= from) push(ev, ev.start.date);
+      continue;
+    }
+    const until = ev.rrule.UNTIL ? icsTime({ params: {}, value: ev.rrule.UNTIL }).date : null;
+    const count = ev.rrule.COUNT ? +ev.rrule.COUNT : Infinity;
+    const skip = moved.get(ev.uid) || new Set();
+    let n = 0;
+    for (let d = ev.start.date; d <= to && (!until || d <= until) && n < count; d = addDays(d, 1)) {
+      if (!rruleHits(ev.rrule, ev.start.date, d)) continue;
+      n++;
+      if (d >= from && !ev.exdates.has(d) && !skip.has(d)) push(ev, d);
+    }
+  }
+  return res.sort((a, b) => a.s.localeCompare(b.s));
+}
 
 /* ---------------- Start ---------------- */
 
