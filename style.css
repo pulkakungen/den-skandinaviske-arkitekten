@@ -779,8 +779,6 @@ mark { background: color-mix(in srgb, var(--tape) 70%, transparent); color: inhe
 .water-hint { margin: -2px 0 6px; font-size: 13px; }
 
 /* ---------------- Den skandinaviske arkitekten ---------------- */
-:root { --paper: #f7f6f2; --paper-raised: #ffffff; --accent: #1f4fd1; --accent-soft: #dfe7fb; }
-@media (prefers-color-scheme: dark) { :root { --accent: #8aa7f0; --accent-soft: #24304d; } }
 .week-day { min-width: 0; }
 .work-hours { width: 78px; }
 .goal-dot.now { background: var(--tape, var(--accent)); box-shadow: 0 0 0 2px var(--ink); }
@@ -793,12 +791,3 @@ mark { background: color-mix(in srgb, var(--tape) 70%, transparent); color: inhe
 .run-table th, .run-table td { text-align: left; padding: 6px 8px; border-bottom: 1px dashed var(--line); white-space: nowrap; }
 .run-table tr.now { background: var(--accent-soft); }
 .run-table small { color: var(--ink-soft); }
-/* Läsbarhet i telefonen: svagare prickar, tydligare grå text, lugn yta bakom texten */
-:root { --dot: #e6e1d6; --ink-faint: #8a8275; --ink-soft: #5a554c; }
-@media (prefers-color-scheme: dark) { :root { --dot: #2a2824; --ink-faint: #8d8679; --ink-soft: #bdb5a6; } }
-body { background-image: radial-gradient(var(--dot) 0.8px, transparent 1px); }
-@media (max-width: 700px) {
-  body { background-image: none; }
-  .block, .week-day { background: var(--paper-raised); border-radius: var(--radius); }
-  .block { padding: 10px 12px; }
-}
