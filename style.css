@@ -17,8 +17,8 @@
   --lv5: #5fa760;
   --radius: 10px;
   --tab-h: 62px;
-  --hand: "Liter", system-ui, sans-serif;
-  --title: "Playfair Display", Georgia, serif;
+  --hand: "Patrick Hand", "Caveat", cursive;
+  --title: "Amatic SC", "Caveat", cursive;
   color-scheme: light;
 }
 
@@ -47,7 +47,7 @@ body {
   background-size: 20px 20px;
   background-attachment: fixed;
   color: var(--ink);
-  font: 16px/1.5 "Liter", system-ui, sans-serif;
+  font: 16px/1.5 "Karla", system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -196,7 +196,7 @@ code { font-size: 14px; background: var(--line); padding: 0 4px; border-radius: 
 }
 .entry.child { padding-left: 34px; font-size: 18px; }
 .log .empty { color: var(--ink-faint); font-family: var(--hand); font-size: 18px; padding: 4px 0; list-style: none; }
-.sig { font-weight: 700; color: var(--accent); text-align: center; font-family: "Liter", sans-serif; font-size: 17px; padding-top: 3px; }
+.sig { font-weight: 700; color: var(--accent); text-align: center; font-family: "Karla", sans-serif; font-size: 17px; padding-top: 3px; }
 .sym {
   width: 30px; height: 28px;
   display: grid; place-items: center;
@@ -213,7 +213,7 @@ button.sym:hover { background: var(--line); }
 .sym-svg .hatch { stroke-width: 1.3; }
 .e-text { cursor: pointer; padding-top: 1px; word-break: break-word; text-decoration: none; }
 .e-time { color: var(--ink-soft); margin-right: 8px; font-variant-numeric: tabular-nums; }
-.e-from { margin-left: 8px; font-size: 14px; color: var(--ink-faint); font-family: "Liter", sans-serif; }
+.e-from { margin-left: 8px; font-size: 14px; color: var(--ink-faint); font-family: "Karla", sans-serif; }
 .st-done .e-text, .st-migrated .e-text { color: var(--ink-faint); }
 .st-struck .e-text { color: var(--ink-faint); text-decoration: line-through; }
 .st-done .sym, .st-migrated .sym, .st-struck .sym { color: var(--ink-soft); }
@@ -289,11 +289,11 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink-soft); 
 .chores li.is-done .c-name { color: var(--ink-faint); }
 .chores .empty { color: var(--ink-faint); }
 .c-name { flex: 1; min-width: 0; }
-.c-meta { display: block; font-family: "Liter", sans-serif; font-size: 13px; color: var(--ink-soft); }
+.c-meta { display: block; font-family: "Karla", sans-serif; font-size: 13px; color: var(--ink-soft); }
 .check { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: none; cursor: pointer; border-radius: 6px; flex: 0 0 34px; }
 .check:hover { background: var(--line); }
 .plus-btn { border: 0; background: none; color: var(--ink-soft); cursor: pointer; font-size: 13px; text-decoration: underline; }
-.tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; font-family: "Liter", sans-serif; }
+.tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; font-family: "Karla", sans-serif; }
 
 /* ---------- Träning och mående ---------- */
 .goal-row { display: flex; align-items: center; gap: 10px; font-family: var(--hand); font-size: 19px; }
@@ -452,7 +452,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink-soft); 
 .future-month h2 { text-transform: uppercase; }
 .fl-list { list-style: none; margin: 0 0 4px; padding: 0; }
 .fl-item { display: flex; align-items: center; gap: 6px; font-family: var(--hand); font-size: 18px; padding: 1px 0; }
-.fl-item b { font-family: "Liter", sans-serif; font-size: 13px; min-width: 22px; text-align: right; color: var(--ink-soft); }
+.fl-item b { font-family: "Karla", sans-serif; font-size: 13px; min-width: 22px; text-align: right; color: var(--ink-soft); }
 .fl-item.hol { color: var(--ink-soft); }
 .fl-item.hol.red { color: var(--accent); }
 .fl-item.bd { cursor: pointer; }
@@ -470,13 +470,13 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink-soft); 
 
 .gratitude-list { list-style: none; margin: 0; padding: 0; }
 .gratitude-list li { padding: 8px 0; border-bottom: 1px dashed var(--line); font-family: var(--hand); font-size: 20px; }
-.g-date { display: block; font-family: "Liter", sans-serif; font-size: 13px; color: var(--ink-soft); text-decoration: none; }
+.g-date { display: block; font-family: "Karla", sans-serif; font-size: 13px; color: var(--ink-soft); text-decoration: none; }
 
 .bd-list { list-style: none; margin: 0; padding: 0; }
 .bd-list li { display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px dashed var(--line); cursor: pointer; font-family: var(--hand); font-size: 20px; }
 .bd-date { color: var(--accent); }
 .bd-name small { color: var(--ink-soft); font-size: 15px; }
-.bd-when { font-family: "Liter", sans-serif; font-size: 13px; color: var(--ink-soft); }
+.bd-when { font-family: "Karla", sans-serif; font-size: 13px; color: var(--ink-soft); }
 
 /* Bokhylla */
 .shelf {
@@ -633,7 +633,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
 .planned { list-style: none; margin: 8px 0 0; padding: 0; font-family: var(--hand); font-size: 18px; }
 .planned li { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
 .planned .sym-svg { width: 16px; height: 16px; }
-.planned span { color: var(--ink-soft); font-family: "Liter", sans-serif; font-size: 13px; }
+.planned span { color: var(--ink-soft); font-family: "Karla", sans-serif; font-size: 13px; }
 a.btn-primary { text-align: center; }
 
 .jump { display: flex; justify-content: center; gap: 18px; font-size: 13px; margin-top: 2px; }
@@ -661,13 +661,13 @@ mark { background: color-mix(in srgb, var(--tape) 70%, transparent); color: inhe
 .meal-head .btn-small { padding: 4px 10px; font-size: 13px; }
 .food-list { list-style: none; margin: 0; padding: 0; }
 .food-list li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0 3px 10px; font-family: var(--hand); font-size: 18px; cursor: pointer; }
-.food-list small { color: var(--ink-soft); font-family: "Liter", sans-serif; font-size: 12px; }
+.food-list small { color: var(--ink-soft); font-family: "Karla", sans-serif; font-size: 12px; }
 .fl-kcal { color: var(--ink-soft); white-space: nowrap; font-size: 16px; }
 .food-sheet #food-results { max-height: 50dvh; overflow-y: auto; }
 .food-results { list-style: none; margin: 0 0 8px; padding: 0; }
 .food-pick { display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; padding: 8px 6px; border: 0; border-bottom: 1px solid var(--line); background: none; cursor: pointer; font-family: var(--hand); font-size: 18px; }
 .food-pick:hover { background: var(--line); }
-.food-pick small { font-family: "Liter", sans-serif; font-size: 12px; color: var(--ink-soft); }
+.food-pick small { font-family: "Karla", sans-serif; font-size: 12px; color: var(--ink-soft); }
 .hint.error { color: var(--accent); }
 .scan-video { width: 100%; max-height: 40dvh; background: #000; border-radius: 8px; object-fit: cover; }
 
@@ -679,7 +679,7 @@ mark { background: color-mix(in srgb, var(--tape) 70%, transparent); color: inhe
 /* ---------- Hudvård ---------- */
 .skin-steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
 .skin-steps li { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-family: var(--hand); font-size: 19px; counter-increment: step; }
-.skin-steps li::before { content: counter(step); width: 18px; text-align: right; font-family: "Liter", sans-serif; font-size: 12px; color: var(--ink-faint); }
+.skin-steps li::before { content: counter(step); width: 18px; text-align: right; font-family: "Karla", sans-serif; font-size: 12px; color: var(--ink-faint); }
 .skin-steps li.is-done .c-name { color: var(--ink-faint); text-decoration: line-through; }
 .cell.on.sick { background: var(--accent); border-color: var(--accent); }
 .cell.half.sick { background: color-mix(in srgb, var(--accent) 40%, transparent); }
@@ -702,8 +702,8 @@ mark { background: color-mix(in srgb, var(--tape) 70%, transparent); color: inhe
 .wc-wrap { position: relative; }
 .wc { width: 100%; height: auto; display: block; touch-action: pan-y; }
 .wc-grid { stroke: var(--line); stroke-width: 1; }
-.wc-tick { fill: var(--ink-soft); font-size: 12px; font-family: "Liter", sans-serif; }
-.wc-label { fill: var(--ink-soft); font-size: 12px; font-family: "Liter", sans-serif; }
+.wc-tick { fill: var(--ink-soft); font-size: 12px; font-family: "Karla", sans-serif; }
+.wc-label { fill: var(--ink-soft); font-size: 12px; font-family: "Karla", sans-serif; }
 .wc-trend { fill: none; stroke: var(--wc-trend); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .wc-dot { fill: var(--wc-dot); stroke: var(--paper); stroke-width: 2; }
 .wc-goal { stroke: var(--ink-soft); stroke-width: 1.5; stroke-dasharray: 5 4; }
@@ -723,7 +723,7 @@ mark { background: color-mix(in srgb, var(--tape) 70%, transparent); color: inhe
 .wc-range .seg-btn.on { color: var(--paper); }
 
 /* ---------- Jobb ---------- */
-.work-tag { margin-left: 8px; font-family: "Liter", sans-serif; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; background: color-mix(in srgb, var(--wc-trend) 16%, transparent); color: var(--ink-soft); vertical-align: 2px; }
+.work-tag { margin-left: 8px; font-family: "Karla", sans-serif; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; background: color-mix(in srgb, var(--wc-trend) 16%, transparent); color: var(--ink-soft); vertical-align: 2px; }
 .chip.work-chip { width: auto; padding: 0 8px; font-size: 13px; }
 .top-btn { white-space: nowrap; text-decoration: none; }
 .top-btn.on { color: var(--accent); font-weight: 700; }
@@ -779,18 +779,10 @@ mark { background: color-mix(in srgb, var(--tape) 70%, transparent); color: inhe
 .water-hint { margin: -2px 0 6px; font-size: 13px; }
 
 /* ---------------- Den skandinaviske arkitekten ---------------- */
-/* Playfair är bredare än Amatic: mindre rubriker, mindre spärrning */
 :root { --paper: #f7f6f2; --paper-raised: #ffffff; --accent: #1f4fd1; --accent-soft: #dfe7fb; }
 @media (prefers-color-scheme: dark) { :root { --accent: #8aa7f0; --accent-soft: #24304d; } }
-.ribbon { font-size: 26px; letter-spacing: .02em; text-transform: none; padding: 10px 40px 8px; }
-.tape-title { font-size: clamp(26px, 6vw, 34px); }
 .week-day { min-width: 0; }
 .work-hours { width: 78px; }
-.wd-name { font-size: 17px; letter-spacing: .02em; text-transform: none; }
-.mg-num { font-size: 20px; }
-.stats b { font-size: 24px; }
-.hero-num { font-size: 48px; }
-h1, h2 { letter-spacing: 0; }
 .goal-dot.now { background: var(--tape, var(--accent)); box-shadow: 0 0 0 2px var(--ink); }
 .run-progress .goal-dots { flex-wrap: wrap; }
 .run-list { list-style: none; margin: 8px 0; padding: 0; }
@@ -801,3 +793,12 @@ h1, h2 { letter-spacing: 0; }
 .run-table th, .run-table td { text-align: left; padding: 6px 8px; border-bottom: 1px dashed var(--line); white-space: nowrap; }
 .run-table tr.now { background: var(--accent-soft); }
 .run-table small { color: var(--ink-soft); }
+/* Läsbarhet i telefonen: svagare prickar, tydligare grå text, lugn yta bakom texten */
+:root { --dot: #e6e1d6; --ink-faint: #8a8275; --ink-soft: #5a554c; }
+@media (prefers-color-scheme: dark) { :root { --dot: #2a2824; --ink-faint: #8d8679; --ink-soft: #bdb5a6; } }
+body { background-image: radial-gradient(var(--dot) 0.8px, transparent 1px); }
+@media (max-width: 700px) {
+  body { background-image: none; }
+  .block, .week-day { background: var(--paper-raised); border-radius: var(--radius); }
+  .block { padding: 10px 12px; }
+}
