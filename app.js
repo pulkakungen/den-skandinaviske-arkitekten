@@ -1718,8 +1718,8 @@ function viewWeek(start) {
 /* ---------------- Månad ---------------- */
 
 // Washitejpens färg per månad.
-// Emils månadsfärger: ljusblå, turkos, limegrön, gul, rosa, grön, mörkblå, syren, mörklila, orange, brun, röd
-const TAPES = ["#8ccbf2", "#5cc6c2", "#b8e05a", "#f7d84a", "#f59cc4", "#6fbf7c", "#7f9be0", "#c9b8e6", "#a784c4", "#f5a05a", "#c09670", "#e57373"];
+// Emils månadsfärger, i samma klara stil som Bellas. Mörka månader får vit text på bandet.
+const TAPES = ["#8ec5f0", "#3cc4b8", "#b6e33c", "#ffd84a", "#ff8fc0", "#3fae5a", "#2f4fa8;--tape-ink:#fff", "#c3a6ec", "#6a3d9a;--tape-ink:#fff", "#ff9a3c", "#8b5a2b;--tape-ink:#fff", "#e5484d;--tape-ink:#fff"];
 const tapeColor = (ym) => TAPES[+ym.slice(5, 7) - 1];
 
 // Små doodles för månadens försättsblad, efter säsong.

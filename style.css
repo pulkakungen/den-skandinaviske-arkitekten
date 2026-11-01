@@ -791,3 +791,4 @@ mark { background: color-mix(in srgb, var(--tape) 70%, transparent); color: inhe
 .run-table th, .run-table td { text-align: left; padding: 6px 8px; border-bottom: 1px dashed var(--line); white-space: nowrap; }
 .run-table tr.now { background: var(--accent-soft); }
 .run-table small { color: var(--ink-soft); }
+.tape, .tape-title, .ribbon, .mg-wd { color: var(--tape-ink, #26241f); }

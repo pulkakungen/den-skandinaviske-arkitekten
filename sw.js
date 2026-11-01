@@ -1,4 +1,4 @@
-const CACHE_NAME = "arkitekten-v5";
+const CACHE_NAME = "arkitekten-v6";
 const CORE_FILES = ["./", "./index.html", "./style.css", "./app.js", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
