@@ -4096,7 +4096,8 @@ function viewSettings() {
     ) +
     block(
       "Appen",
-      `<p class="hint">Version ${APP_VERSION}-arkitekten. Visar plattan en äldre version än datorn, tryck här. Det du skrivit påverkas inte.</p>
+      `<label class="check-field"><input type="checkbox" data-change="whiteBg" ${document.documentElement.classList.contains("white-bg") ? "checked" : ""} /> Helvit bakgrund utan prickar (för läsplattan)</label>
+       <p class="hint">Version ${APP_VERSION}-arkitekten. Visar plattan en äldre version än datorn, tryck här. Det du skrivit påverkas inte.</p>
        <div class="btn-row"><button class="btn-small" data-act="forceUpdate">Hämta senaste versionen</button><button class="btn-small ghost" data-act="dedupe">Ta bort dubbletter</button></div>`
     ) +
     block(
@@ -4129,9 +4130,22 @@ Object.assign(actions, {
   gicsFetch: () => gicsFetch(true)
 });
 
+// Helvit bakgrund på Boox (e-ink). Känns igen automatiskt, går att slå av och på per enhet.
+function applyWhiteBg() {
+  const auto = /BOOX|Onyx|NoteAir|Note Air|Tab ?Ultra|Go ?10|Go103|Palma|Poke|Nova ?Air|Leaf/i.test(navigator.userAgent);
+  document.documentElement.classList.toggle("white-bg", local.whiteBg ?? auto);
+}
+applyWhiteBg();
+
 document.addEventListener("change", (ev) => {
   const el = ev.target;
   const c = el.dataset.change;
+  if (c === "whiteBg") {
+    local.whiteBg = el.checked;
+    saveLocal();
+    applyWhiteBg();
+    return;
+  }
   if (c === "googleIcs") {
     put("meta", { ...settings(), googleIcs: el.value.trim().replace(/^webcal:/i, "https:") });
     gicsFetch(true);

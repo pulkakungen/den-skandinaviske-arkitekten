@@ -792,3 +792,9 @@ mark { background: color-mix(in srgb, var(--tape) 70%, transparent); color: inhe
 .run-table tr.now { background: var(--accent-soft); }
 .run-table small { color: var(--ink-soft); }
 .tape, .tape-title, .ribbon, .mg-wd { color: var(--tape-ink, #26241f); }
+/* Bredare sidor: Emil vill ha mindre marginaler på plattan och datorn */
+.block, .banner, .btn-primary, .page-head, .day-head { max-width: 1000px; }
+@media (min-width: 720px) { #app { padding-left: 24px; padding-right: 24px; } }
+/* Helvit bakgrund för läsplattan */
+html.white-bg { --paper: #ffffff; --paper-raised: #ffffff; --dot: transparent; --ink: #000000; --ink-soft: #333333; --ink-faint: #666666; --line: #cccccc; color-scheme: light; }
+html.white-bg body { background: #ffffff; background-image: none; }
