@@ -1891,6 +1891,7 @@ function viewIndex() {
         <li><a href="#kvall">Kvällsgenomgång</a><span class="dots"></span><span>varje kväll</span></li>
         <li><a href="#coll/c-braindump">Brain dump</a><span class="dots"></span><span>${pageNumber("coll", "c-braindump") ? "s. " + pageNumber("coll", "c-braindump") : ""}</span></li>
         <li><a href="#future/${t.slice(0, 4)}">Framtidslogg ${t.slice(0, 4)}</a><span class="dots"></span><span>s. 3</span></li>
+        <li><a href="#gratitude">3 bra, 3 stolt, 3 tacksam</a><span class="dots"></span><span>${threeDays() ? threeDays() + " dagar" : ""}</span></li>
         <li><a href="#birthdays">Födelsedagar</a><span class="dots"></span><span>${st(live("birthdays").length, "person", "personer")}</span></li>
         <li><a href="#key">Nyckel</a><span class="dots"></span><span>s. 2</span></li>
         <li><a href="#tracker/${t.slice(0, 7)}">Tracker</a><span class="dots"></span><span>${monthName(t.slice(0, 7))}</span></li>
@@ -2105,7 +2106,7 @@ function viewEvening() {
     head("Kvällsgenomgång", "Ikväll", null, null, `<div class="eyebrow">${WD_LONG[parseYmd(t).getDay()]} ${niceDate(t)}</div>`) +
     block(
       "1. Hur var dagen?",
-      `<form class="log-input-row" data-form="dayNote" autocomplete="off"><input name="text" placeholder="En rad om dagen, sparas som notering" /><button class="btn-small">+</button></form>`
+      `${threeInner(t)}<form class="log-input-row" data-form="dayNote" autocomplete="off"><input name="text" placeholder="En rad om dagen, sparas som notering" /><button class="btn-small">+</button></form>`
     ) +
     block(
       "2. Migrera",
@@ -3938,12 +3939,48 @@ function viewRunning() {
 /* ---------------- Vatten ---------------- */
 function wellbeingBlock(date) {
   const water = dayRec(date).water || 0;
-  return block(
+  return threeBlock(date) + block(
     "Vatten",
     `<div class="water">${Array.from({ length: Math.max(WATER_GOAL, water) }, (_, i) => `<button class="glass ${i < water ? "on" : ""}" data-act="setWater" data-val="${i + 1}" data-date="${date}" aria-label="${i + 1} glas"></button>`).join("")}${water >= WATER_GOAL ? `<button class="glass-add" data-act="setWater" data-val="${water + 1}" data-date="${date}" aria-label="Ett glas till">+</button>` : ""}</div>
      <p class="hint water-hint">Ett glas = 2 dl. ${water ? `${water} glas, ${(water * 0.2).toLocaleString("sv-SE", { maximumFractionDigits: 1 })} liter` : "Målet är 8 glas, 1,6 liter"}.</p>`
   );
 }
+
+/* ---------------- 3 bra, 3 stolt, 3 tacksam ---------------- */
+const THREE = [["good", "Tre saker som var bra"], ["proud", "Tre saker jag är stolt över"], ["thanks", "Tre saker jag är tacksam för"]];
+const threeOf = (date, kind) => { const a = dayRec(date)[kind]; return Array.isArray(a) ? a : []; };
+const threeCount = (date) => THREE.reduce((n, [k]) => n + threeOf(date, k).filter((x) => x && x.trim()).length, 0);
+const threeDays = () => live("days").filter((d) => threeCount(d.id) > 0).length;
+function threeInner(date) {
+  return THREE.map(([kind, label]) => `<h3>${label}</h3><ol class="three-list">${[0, 1, 2]
+    .map((i) => `<li><input type="text" data-change="three" data-kind="${kind}" data-i="${i}" data-date="${date}" value="${esc(threeOf(date, kind)[i] || "")}" aria-label="${label}, ${i + 1}" /></li>`)
+    .join("")}</ol>`).join("");
+}
+function threeBlock(date) {
+  const n = threeCount(date);
+  return block("3 · 3 · 3", `<p class="hint">${n ? `${n} av 9 ifyllda` : "Bra, stolt och tacksam. Tre av varje."}</p>${threeInner(date)}`);
+}
+function viewGratitude() {
+  const t = today();
+  const days = live("days").filter((d) => d.id !== t && threeCount(d.id) > 0).sort((a, b) => b.id.localeCompare(a.id));
+  const rows = days.map((d) => `<li><a href="#day/${d.id}" class="g-date">${WD_LONG[parseYmd(d.id).getDay()]} ${niceDate(d.id)}</a>${THREE.map(([k, label]) => {
+      const items = threeOf(d.id, k).filter((x) => x && x.trim());
+      return items.length ? `<div class="three-past"><b>${label.replace("Tre saker ", "")}</b><ul>${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : "";
+    }).join("")}</li>`);
+  return (
+    head("3 bra, 3 stolt, 3 tacksam", "Tacksamhet", null, null) +
+    block("Idag", threeInner(t)) +
+    block(`${days.length} ${days.length === 1 ? "dag" : "dagar"} tidigare`, `<ul class="gratitude-list three-days">${rows.join("") || '<li class="empty">Dina tidigare dagar hamnar här.</li>'}</ul>`)
+  );
+}
+document.addEventListener("change", (ev) => {
+  const el = ev.target;
+  if (el.dataset.change !== "three") return;
+  const { date, kind } = el.dataset;
+  const arr = [0, 1, 2].map((i) => threeOf(date, kind)[i] || "");
+  arr[+el.dataset.i] = el.value.trim();
+  setDay(date, { [kind]: arr });
+});
 
 /* ---------------- Det Emil inte har ---------------- */
 function foodBlock() { return ""; }
@@ -3966,6 +4003,7 @@ function viewTracker(ym) {
   const row = (name, fn) => `<tr><th class="name">${name}</th>${dates.map(fn).join("")}</tr>`;
   const rows = [
     row("Vatten", (d) => cell(d, (dayRec(d).water || 0) >= WATER_GOAL ? "on" : (dayRec(d).water || 0) > 0 ? "half" : "")),
+    row("3 · 3 · 3", (d) => { const n = threeCount(d); return cell(d, n >= 9 ? "on" : n ? "half" : "", n && n < 9 ? String(n) : ""); }),
     row("Löpning", (d) => {
       const w = live("workouts").filter((x) => x.date === d);
       const km = w.reduce((s, x) => s + (+x.km || 0), 0);
@@ -4068,7 +4106,7 @@ function viewSettings() {
       `<p class="hint">Samma lösenord på plattan och datorn, så delar de allt. Städningen och födelsedagarna delas också med Bella.</p>
        <label class="field"><span>Synkadress</span><input data-change="workerUrl" value="${esc(workerUrl())}" autocomplete="off" /></label>
        <label class="field"><span>Lösenord</span><input type="password" id="sync-key" data-change="syncKey" value="${esc(local.syncKey || "")}" autocomplete="off" /></label>
-       <div class="btn-row"><button type="button" class="btn-small ghost" data-act="showKey">Visa lösenordet</button></div>
+       <div class="btn-row"><button type="button" class="btn-small ghost" data-act="showKey">Visa lösenordet</button><button type="button" class="btn-small ghost" data-act="logout">Logga ut</button></div>
        <p class="hint" id="sync-status">${esc(syncStatusText())}</p>
        <button class="btn-small" data-act="syncNow">Synka nu</button>`
     ) +
@@ -4283,6 +4321,75 @@ function expandIcs(events, from, to) {
   }
   return res.sort((a, b) => a.s.localeCompare(b.s));
 }
+
+/* ---------------- Inloggning ---------------- */
+// Appen visar ingenting förrän rätt lösenord är inskrivet på enheten.
+// Lösenordet kontrolleras mot Workern och sparas sedan på enheten.
+function showLogin(msg) {
+  if ($("#login")) return;
+  const el = document.createElement("div");
+  el.id = "login";
+  el.innerHTML = `<form class="login-card" autocomplete="on">
+      <h1 class="login-title">Den skandinaviske arkitekten</h1>
+      <p class="hint">${esc(msg || "Logga in med ditt lösenord.")}</p>
+      <label class="field"><span>Lösenord</span><input id="login-key" type="password" autocomplete="current-password" required /></label>
+      <p class="login-msg" id="login-msg" aria-live="polite"></p>
+      <button class="btn-primary" type="submit">Logga in</button>
+    </form>`;
+  document.body.append(el);
+  document.documentElement.classList.add("locked");
+  const input = $("#login-key");
+  setTimeout(() => input.focus(), 50);
+  el.querySelector("form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const key = input.value.trim();
+    const m = $("#login-msg");
+    m.textContent = "Kontrollerar…";
+    try {
+      const res = await fetch(workerUrl() + "/ping", { headers: { "X-Journal-Key": key }, cache: "no-store" });
+      const j = await res.json().catch(() => ({}));
+      if (j.role !== "owner") {
+        m.textContent = "Fel lösenord.";
+        input.select();
+        return;
+      }
+      local.syncKey = key;
+      saveLocal();
+      el.remove();
+      document.documentElement.classList.remove("locked");
+      await syncNow(false);
+      render();
+    } catch (e) {
+      m.textContent = "Ingen kontakt med servern. Kontrollera att enheten är uppkopplad.";
+    }
+  });
+}
+if (!local.syncKey) showLogin();
+
+// Fel lösenord vid synk: logga in igen
+{
+  const baseSync = syncNow;
+  syncNow = async function (manual) {
+    await baseSync(manual);
+    if (syncError === "fel lösenord") {
+      delete local.syncKey;
+      saveLocal();
+      showLogin("Lösenordet stämmer inte längre. Logga in igen.");
+    }
+  };
+}
+
+Object.assign(actions, {
+  logout: async () => {
+    const res = await openSheet("Logga ut från den här enheten?", `<p class="hint">Allt du skrivit finns kvar i synken och kommer tillbaka när du loggar in igen. Det som inte hunnit synkas försvinner från den här enheten.</p>`, [{ value: "out", label: "Logga ut", cls: "danger" }, CLOSE]);
+    if (res.action !== "out") return;
+    await syncNow(false).catch(() => {});
+    try { localStorage.removeItem(STATE_KEY); } catch (e) {}
+    for (const k of Object.keys(local)) delete local[k];
+    saveLocal();
+    location.replace(location.pathname);
+  }
+});
 
 /* ---------------- Start ---------------- */
 
