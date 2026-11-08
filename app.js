@@ -7,7 +7,7 @@
    ========================================================= */
 
 // Ändras vid varje publicering, syns under Inställningar.
-const APP_VERSION = "2026-10-20.1";
+const APP_VERSION = "2026-11-08.1";
 const DEFAULT_WORKER_URL = "https://arkitekten-sync.bella-sassibrass.workers.dev";
 const GCAL_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 // Bellas eget OAuth-klient-ID (projektet "bellas bullet" i Google Cloud). Inte hemligt.
@@ -610,6 +610,7 @@ function render() {
   const t = today();
   const views = {
     day: () => viewDay(arg || t),
+    plan: () => viewPlan(arg || t),
     week: () => viewWeek(weekStart(arg || t)),
     month: () => viewMonth(arg || t.slice(0, 7)),
     future: () => viewFuture(+(arg || t.slice(0, 4))),
@@ -627,7 +628,7 @@ function render() {
     settings: () => viewSettings()
   };
   const app = $("#app");
-  const pageArg = { day: arg || t, week: weekStart(arg || t), month: arg || t.slice(0, 7), links: arg !== undefined ? decodeURIComponent(arg) : currentList() }[view] ?? arg ?? "";
+  const pageArg = { day: arg || t, plan: arg || t, week: weekStart(arg || t), month: arg || t.slice(0, 7), links: arg !== undefined ? decodeURIComponent(arg) : currentList() }[view] ?? arg ?? "";
   app.innerHTML = (views[view] || views.day)() + `<span class="page-no">${pageNumber(view, pageArg)}</span>`;
   if (turnDir) {
     app.classList.remove("turn-next", "turn-prev");
@@ -647,19 +648,23 @@ function render() {
 const isMonday = (d) => parseYmd(d).getDay() === 1;
 const lastOfMonth = (ym) => `${ym}-${pad(daysInMonth(ym))}`;
 
+// Bokens ordning: månadssida, veckosida före varje måndag, och varje dag
+// börjar med en tidsplaneringssida (plan) följd av dagssidan.
 function nextPage(view, arg) {
   if (view === "month") {
     const first = `${arg}-01`;
-    return isMonday(first) ? `week/${first}` : `day/${first}`;
+    return isMonday(first) ? `week/${first}` : `plan/${first}`;
   }
-  if (view === "week") return `day/${arg}`;
+  if (view === "week") return `plan/${arg}`;
+  if (view === "plan") return `day/${arg}`;
   const nd = addDays(arg, 1);
   if (nd.slice(0, 7) !== arg.slice(0, 7)) return `month/${nd.slice(0, 7)}`;
-  return isMonday(nd) ? `week/${nd}` : `day/${nd}`;
+  return isMonday(nd) ? `week/${nd}` : `plan/${nd}`;
 }
 
 function prevPage(view, arg) {
   if (view === "month") return `day/${lastOfMonth(addMonths(arg, -1))}`;
+  if (view === "day") return `plan/${arg}`;
   if (view === "week") return arg.slice(8) === "01" ? `month/${arg.slice(0, 7)}` : `day/${addDays(arg, -1)}`;
   if (isMonday(arg)) return `week/${arg}`;
   return arg.slice(8) === "01" ? `month/${arg.slice(0, 7)}` : `day/${addDays(arg, -1)}`;
@@ -701,7 +706,8 @@ const mondaysBetween = (a, b) => {
 };
 const monthsBetween = (a, b) => (+b.slice(0, 4) - +a.slice(0, 4)) * 12 + (+b.slice(5, 7) - +a.slice(5, 7));
 // Dagens sida utan samlingar: månadssidor + veckosidor + dagar sedan start.
-const dayPage = (start, d) => 3 + monthsBetween(start, d) + 1 + mondaysBetween(start, d) + daysBetween(start, d) + 1;
+// Varje dag är två sidor: tidsplanering och dagssida.
+const dayPage = (start, d) => 3 + monthsBetween(start, d) + 1 + mondaysBetween(start, d) + 2 * (daysBetween(start, d) + 1);
 
 function pageNumber(view, arg) {
   const fixed = { index: 1, key: 2, future: 3 }[view];
@@ -716,14 +722,14 @@ function pageNumber(view, arg) {
     const c = colls[i];
     return dayPage(start, c.day) + before(c.day) + colls.slice(0, i).filter((x) => x.day === c.day).length + 1;
   }
-  if (!["day", "week", "month"].includes(view) || !arg) return "";
+  if (!["day", "plan", "week", "month"].includes(view) || !arg) return "";
   if (view === "month") {
     const first = arg.slice(0, 7) + "-01";
     if (first < start) return "";
     return first === start ? 4 : dayPage(start, addDays(first, -1)) + before(first) + 1;
   }
   if (arg < start) return "";
-  return dayPage(start, arg) + before(arg) - (view === "week" ? 1 : 0);
+  return dayPage(start, arg) + before(arg) - ({ plan: 1, week: 2 }[view] || 0);
 }
 
 // Svep åt sidan för att bläddra, som i en bok.
@@ -866,7 +872,7 @@ function viewDay(date) {
       <div class="ribbon"><span>${niceDate(date)}</span></div>
       <div class="sign"><span>${WD_LONG[d.getDay()]}</span></div>
       <div class="eyebrow">vecka ${isoWeek(date)}${work ? " · " + esc(work) : ""}</div>
-      ${date !== t ? `<a class="link-btn" href="#day/${t}">till idag</a>` : ""}
+      <a class="link-btn" href="#plan/${date}">tidsplanering</a>${date !== t ? ` · <a class="link-btn" href="#day/${t}">till idag</a>` : ""}
     </div>
     <a class="nav-arrow" href="#${nextPage("day", date)}" aria-label="Nästa sida">›</a>
   </header>`;
@@ -891,6 +897,9 @@ function viewDay(date) {
     html += `<div class="banner"><span>${backlog.length} öppna uppgifter från tidigare. Dags att migrera.</span>
       <button class="btn-small" data-act="migrate">Gå igenom</button></div>`;
   }
+
+  const top3 = (dayRec(date).top || []).filter(Boolean);
+  if (top3.length) html += block(`<a href="#plan/${date}">Viktigast idag</a>`, `<ol class="top3">${top3.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>`);
 
   // Idag: det som redan är slut döljs (utan sluttid räknas en timme).
   const nowStamp = `${t}T${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
@@ -2072,6 +2081,82 @@ async function linkMenu(id) {
   render();
 }
 
+/* ---------------- Tidsplanering (timeboxing) ---------------- */
+// Dagens första sida: tre viktigaste, brain dump och dagen i halvtimmar
+// 05 till 23. Kalendern och tider ur loggen syns i rutorna, du skriver i dem.
+const TB_START = 5;
+const TB_END = 24;
+const slotKey = (h, m) => `${pad(h)}:${pad(m)}`;
+function scheduleOn(date) {
+  const t = today();
+  const items = [];
+  for (const ev of gcalEventsOn(date)) {
+    if (ev.ad) continue;
+    const s = ev.s.slice(11, 16);
+    const e = ev.eTime || (ev.e && ev.e > ev.s ? ev.e.slice(11, 16) : null);
+    items.push({ s, e, t: ev.t, work: isWorkEv(ev) });
+  }
+  for (const en of entriesOn(date)) if (en.time) items.push({ s: en.time, e: en.end || null, t: en.text, work: !!en.work, done: en.status === "done" });
+  return items.map((x) => {
+    const [h, m] = x.s.split(":").map(Number);
+    const end = x.e && x.e > x.s ? x.e : slotKey(Math.min(23, h + (m >= 30 ? 1 : 0)), m >= 30 ? 0 : 30);
+    return { ...x, end, key: `${x.t}|${x.s}` };
+  });
+}
+// Det du dolt i tidsplaneringen: bara den dagen, eller alltid (samma titel).
+const tbHiddenTitles = () => new Set((settings().tbHiddenTitles || []).map(normTitle));
+const isTbHidden = (date, x) => (dayRec(date).tbHidden || []).includes(x.key) || tbHiddenTitles().has(normTitle(x.t));
+function viewPlan(date) {
+  const t = today();
+  const r = dayRec(date);
+  const top = r.top || [];
+  const boxes = r.boxes || {};
+  const all = scheduleOn(date);
+  const sched = all.filter((x) => !isTbHidden(date, x));
+  const hiddenCount = all.length - sched.length;
+  const nowKey = date === t ? slotKey(new Date().getHours(), new Date().getMinutes() < 30 ? 0 : 30) : "";
+  const cell = (h, m) => {
+    const k = slotKey(h, m);
+    const kEnd = m ? slotKey(h + 1, 0) : slotKey(h, 30);
+    const busy = sched.filter((x) => x.s < kEnd && x.end > k);
+    const chips = busy
+      .map((x) => `<button type="button" class="tb-ev${x.work ? " work" : ""}${x.done ? " done" : ""}" data-act="tbEvent" data-date="${date}" data-key="${esc(x.key)}" data-title="${esc(x.t)}">${x.s === k || (x.s > k && x.s < kEnd) ? `<b>${x.s}</b> ` : ""}${esc(x.t)}</button>`)
+      .join("");
+    return `<div class="tb-cell${busy.length ? " busy" : ""}${k === nowKey ? " now" : ""}">${chips}<input type="text" data-change="box" data-slot="${k}" data-date="${date}" value="${esc(boxes[k] || "")}" aria-label="${k}" /></div>`;
+  };
+  const rows = [];
+  for (let h = TB_START; h < TB_END; h++) rows.push(`<div class="tb-hour">${pad(h)}</div>${cell(h, 0)}${cell(h, 30)}`);
+  const dump = entriesWhere((e) => e.coll === BRAINDUMP.id && e.status === "open").slice(-6);
+  return (
+    `<header class="day-head plan-head" style="--tape:${tapeColor(date.slice(0, 7))}">
+      <a class="nav-arrow" href="#${prevPage("plan", date)}" aria-label="Föregående sida">‹</a>
+      <div class="page-title">
+        <div class="ribbon"><span>${niceDate(date)}</span></div>
+        <div class="sign"><span>Tidsplanering</span></div>
+        <div class="eyebrow">${WD_LONG[parseYmd(date).getDay()]} · vecka ${isoWeek(date)}</div>
+      </div>
+      <a class="nav-arrow" href="#${nextPage("plan", date)}" aria-label="Nästa sida">›</a>
+    </header>
+    <div class="plan-layout"><div class="plan-side">` +
+    block(
+      "Viktigast idag",
+      `<div class="tb-top">${[0, 1, 2].map((i) => `<label><span>${i + 1}</span><input type="text" data-change="top" data-i="${i}" data-date="${date}" value="${esc(top[i] || "")}" placeholder="${["Det viktigaste", "Sen detta", "Och detta"][i]}" /></label>`).join("")}</div>`
+    ) +
+    block(
+      `<a href="#coll/${BRAINDUMP.id}">Brain dump</a>`,
+      `${dump.length ? `<ul class="log">${dump.map((e) => entryRow(e)).join("")}</ul>` : '<p class="hint">Töm huvudet här. Sortera i kvällsgenomgången.</p>'}${logForm({ coll: BRAINDUMP.id }, "Tanke, idé, att göra...", "note")}`
+    ) +
+    `</div><div class="plan-main">` +
+    block(
+      "Dagen",
+      `<p class="hint">Det som redan står i kalendern och loggen syns i rutorna. Skriv vad du gör när.${sched.some((x) => x.work) ? " Jobb är markerat." : ""}</p>
+       <p class="hint">Tryck på något från kalendern för att dölja det här.${hiddenCount ? ` ${hiddenCount} dolda. <button type="button" class="link-btn" data-act="tbShowHidden" data-date="${date}">Visa igen</button>` : ""}</p>
+       <div class="tb-grid"><div></div><div class="tb-col">:00</div><div class="tb-col">:30</div>${rows.join("")}</div>`
+    ) +
+    `<a class="btn-primary plan-next" href="#day/${date}">Till dagssidan</a></div></div>`
+  );
+}
+
 /* ---------------- Kvällsgenomgång ---------------- */
 
 let planned = []; // det som lagts in under kvällens planering, visas som kvitto
@@ -2128,7 +2213,7 @@ function viewEvening() {
       "Imorgon",
       list(tomorrowRows, "Inget inbokat än.") +
         (chores.length ? `<h3>Dags för</h3><ul class="chores">${chores.map((i) => `<li><span class="check">${sym("open")}</span><span class="c-name">${esc(i.r.name)}</span></li>`).join("")}</ul>` : "") +
-        `<a class="btn-primary" href="#day/${tomorrow}">Öppna imorgon</a>`
+        `<div class="btn-row"><a class="btn-primary" href="#plan/${tomorrow}">Planera imorgon</a><a class="btn-small ghost" href="#day/${tomorrow}">Öppna imorgon</a></div>`
     )
   );
 }
@@ -3157,6 +3242,34 @@ const actions = {
     else if (res.action === "delete") remove("foods", f.id);
     render();
   },
+  tbEvent: async (d) => {
+    const res = await openSheet(
+      esc(d.title),
+      '<p class="hint">Döljs bara i tidsplaneringen. Kalendern och dagssidan påverkas inte.</p>',
+      [{ value: "day", label: "Dölj den här dagen", cls: "btn-primary" }, { value: "always", label: "Dölj alltid med det här namnet" }, CLOSE]
+    );
+    if (res.action === "day") setDay(d.date, { tbHidden: [...new Set([...(dayRec(d.date).tbHidden || []), d.key])] });
+    else if (res.action === "always") {
+      const s = settings();
+      put("meta", { ...s, tbHiddenTitles: [...new Set([...(s.tbHiddenTitles || []), d.title])] });
+    }
+    render();
+  },
+  tbShowHidden: async (d) => {
+    const s = settings();
+    const always = (s.tbHiddenTitles || []).filter((t) => scheduleOn(d.date).some((x) => normTitle(x.t) === normTitle(t)));
+    const res = await openSheet(
+      "Dolda i tidsplaneringen",
+      `<p class="hint">${(dayRec(d.date).tbHidden || []).length ? "Det du dolt den här dagen visas igen. " : ""}${always.length ? `Döljs alltid: ${always.map(esc).join(", ")}.` : ""}</p>`,
+      [{ value: "ok", label: "Visa allt igen", cls: "btn-primary" }, CLOSE]
+    );
+    if (res.action === "ok") {
+      setDay(d.date, { tbHidden: [] });
+      const keep = (s.tbHiddenTitles || []).filter((t) => !always.includes(t));
+      put("meta", { ...s, tbHiddenTitles: keep });
+    }
+    render();
+  },
   dedupe: () => {
     const n = removeDuplicates();
     toast(n ? `Tog bort ${n} ${n === 1 ? "dubblett" : "dubbletter"}` : "Inga dubbletter hittades");
@@ -3434,6 +3547,16 @@ document.addEventListener("change", async (ev) => {
   if (!c) return;
   if (c === "steps") setDay(el.dataset.date, { steps: Math.max(0, parseInt(el.value, 10) || 0) });
   else if (c === "grateful") setDay(el.dataset.date, { grateful: el.value.trim() });
+  else if (c === "top") {
+    const list = [0, 1, 2].map((i) => (dayRec(el.dataset.date).top || [])[i] || "");
+    list[+el.dataset.i] = el.value.trim();
+    setDay(el.dataset.date, { top: list });
+  } else if (c === "box") {
+    const boxes = { ...(dayRec(el.dataset.date).boxes || {}) };
+    if (el.value.trim()) boxes[el.dataset.slot] = el.value.trim();
+    else delete boxes[el.dataset.slot];
+    setDay(el.dataset.date, { boxes });
+  }
   else if (c === "work") setDay(el.dataset.date, { work: el.value.trim() });
   else if (c === "workNote") setDay(el.dataset.date, { workNote: el.value.trim() });
   else if (c === "weight") {
