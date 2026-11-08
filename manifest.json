@@ -2,7 +2,7 @@
   "name": "Den skandinaviske arkitekten",
   "short_name": "Arkitekten",
   "description": "Emils digitala bullet journal",
-  "id": "./?app=arkitekten-2",
+  "id": "./?app=arkitekten-3",
   "start_url": "./#day",
   "scope": "./",
   "display": "standalone",
